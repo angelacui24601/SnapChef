@@ -1,19 +1,8 @@
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { clerkMiddleware } from "@clerk/nextjs/server";
 
-// Routes that are publicly accessible without signing in
-const isPublicRoute = createRouteMatcher([
-  "/onboarding(.*)",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/recipe(.*)",
-  "/api/detect-ingredients(.*)",
-]);
-
-export default clerkMiddleware(async (auth, req) => {
-  if (!isPublicRoute(req)) {
-    await auth.protect();
-  }
-});
+// Passive mode: Clerk tracks sessions but does not force a redirect.
+// Authentication is handled through the onboarding flow (StepAuth).
+export default clerkMiddleware();
 
 export const config = {
   matcher: [
