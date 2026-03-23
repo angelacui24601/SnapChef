@@ -165,72 +165,80 @@ export default function HomePage() {
             <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {authLoaded && isSignedIn ? (
-              <>
-                <button
-                  onClick={() => router.push("/profile")}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    background: "#f8fafc",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "999px",
-                    padding: "6px 12px 6px 8px",
-                    cursor: "pointer",
-                  }}
-                >
-                  {user?.imageUrl ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img
-                      src={user.imageUrl}
-                      alt="Profile"
-                      width={30}
-                      height={30}
-                      style={{ borderRadius: "50%", flexShrink: 0 }}
-                    />
-                  ) : (
-                    <div
-                      style={{
-                        width: "30px",
-                        height: "30px",
-                        borderRadius: "50%",
-                        background: "linear-gradient(135deg, #22c55e, #16a34a)",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "white",
-                        fontSize: "0.8rem",
-                        fontWeight: 700,
-                      }}
-                    >
-                      {(user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "?")[0].toUpperCase()}
-                    </div>
-                  )}
-                  <div style={{ textAlign: "left" }}>
-                    <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>Profile</div>
-                    <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                      {user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Account"}
-                    </div>
-                  </div>
-                </button>
+            {!authLoaded && <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>}
+            <button
+              onClick={() => router.push(isSignedIn ? "/profile" : "/onboarding")}
+              aria-label={isSignedIn ? "Open profile" : "Go to sign in"}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "10px",
+                background: "#f8fafc",
+                border: "1px solid #e5e7eb",
+                borderRadius: "999px",
+                padding: "6px 12px 6px 8px",
+                cursor: "pointer",
+              }}
+            >
+              {isSignedIn && user?.imageUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={user.imageUrl}
+                  alt="Profile"
+                  width={30}
+                  height={30}
+                  style={{ borderRadius: "50%", flexShrink: 0 }}
+                />
+              ) : (
                 <div
                   style={{
+                    width: "30px",
+                    height: "30px",
+                    borderRadius: "50%",
+                    background: isSignedIn ? "linear-gradient(135deg, #22c55e, #16a34a)" : "#e5e7eb",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    width: "40px",
-                    height: "40px",
-                    borderRadius: "999px",
-                    border: "1px solid #e5e7eb",
-                    background: "white",
+                    color: isSignedIn ? "white" : "#4b5563",
+                    flexShrink: 0,
                   }}
                 >
-                  <UserButton />
+                  {isSignedIn ? (
+                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+                      {(user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "?")[0].toUpperCase()}
+                    </span>
+                  ) : (
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  )}
                 </div>
-              </>
-            ) : (
-              <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>
+              )}
+              <div style={{ textAlign: "left" }}>
+                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>
+                  {isSignedIn ? "Profile" : "Account"}
+                </div>
+                <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {isSignedIn ? (user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Signed in") : "Sign in to sync favorites"}
+                </div>
+              </div>
+            </button>
+            {authLoaded && isSignedIn && (
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: "40px",
+                  height: "40px",
+                  borderRadius: "999px",
+                  border: "1px solid #e5e7eb",
+                  background: "white",
+                }}
+              >
+                <UserButton />
+              </div>
             )}
           </div>
         </div>
