@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
+export const runtime = "nodejs";
+
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
   console.log("[detect-ingredients] OPENAI_API_KEY present:", Boolean(apiKey), "env:", process.env.VERCEL_ENV ?? "local");

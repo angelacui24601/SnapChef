@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 
+export const runtime = "nodejs";
+
 type MealType = "breakfast" | "lunch" | "dinner" | "snack";
 
 interface MealRequest {
