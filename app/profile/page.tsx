@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
+import { useSnapChefAuth } from "../../components/auth/AuthProvider";
 import {
   getFavoritesUpdatedEventName,
   readFavoriteRecipes,
@@ -14,6 +15,7 @@ import {
 export default function ProfilePage() {
   const router = useRouter();
   const { user } = useUser();
+  const { isGuest, openAuthModal, continueAsGuest, requireAuth } = useSnapChefAuth();
   const [age, setAge] = useState(0);
   const [allergies, setAllergies] = useState<string[]>([]);
   const [newAllergy, setNewAllergy] = useState("");
@@ -22,6 +24,7 @@ export default function ProfilePage() {
   const [medicalRestrictions, setMedicalRestrictions] = useState<string[]>([]);
   const [newMedicalRestriction, setNewMedicalRestriction] = useState("");
   const [favoriteRecipes, setFavoriteRecipes] = useState<FavoriteRecipe[]>([]);
+  const [notice, setNotice] = useState("");
 
   // Load existing profile
   useEffect(() => {
@@ -118,6 +121,11 @@ export default function ProfilePage() {
   };
 
   const handleSave = () => {
+    if (!user?.id) {
+      setNotice("Guest mode does not save profile changes or favorites. Sign in when you want to keep them.");
+      return;
+    }
+
     const profile = {
       age,
       allergies,
@@ -135,6 +143,60 @@ export default function ProfilePage() {
   const handleCancel = () => {
     router.push("/");
   };
+
+  if (!user && !isGuest) {
+    return (
+      <div className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)] px-5 py-12">
+        <div className="mx-auto max-w-xl rounded-[28px] border border-white/70 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
+          <div className="mb-6 flex items-center gap-3">
+            <Image
+              src="/snapchef-logo.png"
+              alt="SnapChef logo"
+              width={42}
+              height={42}
+              className="rounded-xl object-cover"
+              priority
+            />
+            <div>
+              <h1 className="text-2xl font-semibold text-slate-900">Save your SnapChef profile</h1>
+              <p className="text-sm text-slate-500">Profile editing stays available after you sign in or explicitly continue as guest.</p>
+            </div>
+          </div>
+
+          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
+            Signing in keeps favorites and preferences attached to your account. Guest mode lets you explore, but nothing is stored.
+          </div>
+
+          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
+            <button
+              type="button"
+              onClick={openAuthModal}
+              className="flex-1 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
+            >
+              Sign in to continue
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                continueAsGuest();
+              }}
+              className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
+            >
+              Continue as guest
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="mt-3 w-full text-sm font-medium text-slate-500 transition hover:text-slate-700"
+          >
+            Back to home
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{
@@ -170,6 +232,34 @@ export default function ProfilePage() {
             Update your dietary preferences and restrictions
           </p>
         </div>
+
+        {isGuest && !user && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: '#fffbeb',
+            border: '1px solid #fde68a',
+            color: '#92400e',
+            fontSize: '0.9rem'
+          }}>
+            Guest mode is active. Changes here are temporary and will not be saved to your account or local storage.
+          </div>
+        )}
+
+        {notice && (
+          <div style={{
+            marginBottom: '24px',
+            padding: '14px 16px',
+            borderRadius: '16px',
+            background: '#eff6ff',
+            border: '1px solid #bfdbfe',
+            color: '#1d4ed8',
+            fontSize: '0.9rem'
+          }}>
+            {notice}
+          </div>
+        )}
 
         {/* Form */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -620,7 +710,7 @@ export default function ProfilePage() {
               Cancel
             </button>
             <button
-              onClick={handleSave}
+              onClick={() => requireAuth(handleSave)}
               style={{
                 flex: 1,
                 background: 'linear-gradient(135deg, #22c55e, #16a34a)',

@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { ClerkProvider, SignInButton, SignUpButton, Show, UserButton } from "@clerk/nextjs";
+import { ClerkProvider } from "@clerk/nextjs";
+import { SnapChefAuthProvider } from "../components/auth/AuthProvider";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -30,18 +31,7 @@ export default function RootLayout({
     >
       <body className="min-h-full flex flex-col">
         <ClerkProvider>
-          <Show when="signed-out">
-            <header style={{ display: "none" }}>
-              <SignInButton />
-              <SignUpButton />
-            </header>
-          </Show>
-          <Show when="signed-in">
-            <header style={{ display: "none" }}>
-              <UserButton />
-            </header>
-          </Show>
-          {children}
+          <SnapChefAuthProvider>{children}</SnapChefAuthProvider>
         </ClerkProvider>
       </body>
     </html>

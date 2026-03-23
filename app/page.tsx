@@ -3,7 +3,8 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { UserButton, useAuth, useUser } from "@clerk/nextjs";
+import { useAuth, useUser } from "@clerk/nextjs";
+import { useSnapChefAuth } from "../components/auth/AuthProvider";
 import KitchenStatePanel from "../components/KitchenStatePanel";
 import RecipeOutputPanel from "../components/RecipeOutputPanel";
 import UserProfileSidebar from "../components/UserProfileSidebar";
@@ -23,34 +24,12 @@ export default function HomePage() {
   const router = useRouter();
   const { isLoaded: authLoaded, isSignedIn, userId } = useAuth();
   const { user } = useUser();
+  const { isLoggedIn, isGuest, openAuthModal, requireAuth } = useSnapChefAuth();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
   const [result, setResult] = useState<GenerateRecipeResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const saved = localStorage.getItem("userProfile");
-    if (!saved) {
-      router.push("/onboarding");
-      return;
-    }
-
-    try {
-      const profile = JSON.parse(saved);
-      if (
-        !profile.age &&
-        (!profile.allergies || profile.allergies.length === 0) &&
-        (!profile.religiousRestrictions || profile.religiousRestrictions.length === 0) &&
-        (!profile.medicalRestrictions || profile.medicalRestrictions.length === 0)
-      ) {
-        router.push("/onboarding");
-      }
-    } catch (loadError) {
-      console.warn("Failed to parse existing profile", loadError);
-      router.push("/onboarding");
-    }
-  }, [router]);
 
   useEffect(() => {
     const saved = localStorage.getItem("kitchenState");
@@ -130,6 +109,15 @@ export default function HomePage() {
     }
   };
 
+  const handleProfileClick = () => {
+    if (isLoggedIn) {
+      router.push("/profile");
+      return;
+    }
+
+    openAuthModal();
+  };
+
   return (
     <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
       {/* Sticky top navbar */}
@@ -165,10 +153,12 @@ export default function HomePage() {
             <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {!authLoaded && <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>}
+            <div className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 md:block">
+              {isLoggedIn ? "Signed in" : isGuest ? "Guest mode" : "Sign in to save your recipes"}
+            </div>
             <button
-              onClick={() => router.push(isSignedIn ? "/profile" : "/onboarding")}
-              aria-label={isSignedIn ? "Open profile" : "Go to sign in"}
+              onClick={handleProfileClick}
+              aria-label={isLoggedIn ? "Open profile" : "Open authentication"}
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -180,7 +170,7 @@ export default function HomePage() {
                 cursor: "pointer",
               }}
             >
-              {isSignedIn && user?.imageUrl ? (
+              {isLoggedIn && user?.imageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
                   src={user.imageUrl}
@@ -195,15 +185,15 @@ export default function HomePage() {
                     width: "30px",
                     height: "30px",
                     borderRadius: "50%",
-                    background: isSignedIn ? "linear-gradient(135deg, #22c55e, #16a34a)" : "#e5e7eb",
+                    background: isLoggedIn ? "linear-gradient(135deg, #22c55e, #16a34a)" : "#e5e7eb",
                     display: "flex",
                     alignItems: "center",
                     justifyContent: "center",
-                    color: isSignedIn ? "white" : "#4b5563",
+                    color: isLoggedIn ? "white" : "#4b5563",
                     flexShrink: 0,
                   }}
                 >
-                  {isSignedIn ? (
+                  {isLoggedIn ? (
                     <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>
                       {(user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "?")[0].toUpperCase()}
                     </span>
@@ -217,35 +207,41 @@ export default function HomePage() {
               )}
               <div style={{ textAlign: "left" }}>
                 <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>
-                  {isSignedIn ? "Profile" : "Account"}
+                  {isLoggedIn ? "Profile" : isGuest ? "Guest" : "Account"}
                 </div>
                 <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {isSignedIn ? (user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Signed in") : "Sign in to sync favorites"}
+                  {isLoggedIn
+                    ? (user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Signed in")
+                    : isGuest
+                      ? "Browsing without saving"
+                      : "Open auth options"}
                 </div>
               </div>
             </button>
-            {authLoaded && isSignedIn && (
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  width: "40px",
-                  height: "40px",
-                  borderRadius: "999px",
-                  border: "1px solid #e5e7eb",
-                  background: "white",
-                }}
-              >
-                <UserButton />
-              </div>
-            )}
           </div>
         </div>
       </header>
 
       {/* Page content */}
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "28px 24px" }}>
+        {!isLoggedIn && (
+          <div className="mb-5 rounded-[20px] border border-slate-200 bg-white/85 px-5 py-4 shadow-sm backdrop-blur">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+              <div>
+                <p className="text-sm font-semibold text-slate-900">Keep exploring without friction.</p>
+                <p className="text-sm text-slate-500">Sign in to save your recipes and preferences, or continue using SnapChef as a guest.</p>
+              </div>
+              <button
+                type="button"
+                onClick={openAuthModal}
+                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
+              >
+                Open auth options
+              </button>
+            </div>
+          </div>
+        )}
+
         {error && (
           <div
             style={{
@@ -289,12 +285,21 @@ export default function HomePage() {
                 error={error}
                 setError={setError}
               />
-              <RecipeOutputPanel result={result} loading={loading} userId={authLoaded && isSignedIn ? userId ?? null : null} />
+              <RecipeOutputPanel
+                result={result}
+                loading={loading}
+                userId={authLoaded && isSignedIn ? userId ?? null : null}
+                isGuest={isGuest}
+                requireAuth={requireAuth}
+              />
             </div>
           </div>
 
           <div style={{ flex: "0 0 280px" }}>
-            <UserProfileSidebar />
+            <UserProfileSidebar
+              isGuest={isGuest}
+              onEditProfile={() => requireAuth(() => router.push("/profile"))}
+            />
           </div>
         </div>
       </div>

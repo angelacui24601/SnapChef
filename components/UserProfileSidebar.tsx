@@ -4,6 +4,11 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUser } from "@clerk/nextjs";
 
+interface UserProfileSidebarProps {
+  isGuest?: boolean;
+  onEditProfile?: () => void;
+}
+
 interface UserProfile {
   age: number;
   allergies: string[];
@@ -11,7 +16,7 @@ interface UserProfile {
   medicalRestrictions: string[];
 }
 
-export default function UserProfileSidebar() {
+export default function UserProfileSidebar({ isGuest = false, onEditProfile }: UserProfileSidebarProps) {
   const router = useRouter();
   const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile>({
@@ -54,6 +59,11 @@ export default function UserProfileSidebar() {
   }, []);
 
   const handleEditProfile = () => {
+    if (onEditProfile) {
+      onEditProfile();
+      return;
+    }
+
     router.push("/profile");
   };
 
@@ -123,6 +133,27 @@ export default function UserProfileSidebar() {
               {user.fullName ?? user.primaryEmailAddress?.emailAddress}
             </div>
             <div style={{ fontSize: '0.7rem', color: '#4ade80' }}>Signed in</div>
+          </div>
+        </div>
+      )}
+
+      {isGuest && !user && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '10px 12px',
+          background: '#fffbeb',
+          borderRadius: '10px',
+          marginBottom: '16px',
+          border: '1px solid #fde68a'
+        }}>
+          <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#f59e0b', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', flexShrink: 0, fontSize: '0.75rem', fontWeight: 700 }}>
+            G
+          </div>
+          <div>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#92400e' }}>Guest mode</div>
+            <div style={{ fontSize: '0.72rem', color: '#b45309' }}>Recipes stay temporary until you sign in.</div>
           </div>
         </div>
       )}
@@ -271,7 +302,7 @@ export default function UserProfileSidebar() {
           <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
           <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
         </svg>
-        Edit Profile
+        {user ? 'Edit Profile' : isGuest ? 'Edit Session Preferences' : 'Save Preferences'}
       </button>
     </div>
   );

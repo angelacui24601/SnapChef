@@ -6,7 +6,6 @@ import Image from "next/image";
 import StepBasicInfo from "../../components/onboarding/StepBasicInfo";
 import StepDietaryNeeds from "../../components/onboarding/StepDietaryNeeds";
 import StepKitchenSetup from "../../components/onboarding/StepKitchenSetup";
-import StepAuth from "../../components/onboarding/StepAuth";
 
 export interface OnboardingProfile {
   age: number | "";
@@ -20,7 +19,7 @@ export interface OnboardingProfile {
   kitchenImage: string | null;
 }
 
-const STEPS = ["Basic Info", "Dietary Needs", "Kitchen Setup", "Save Account"];
+const STEPS = ["Basic Info", "Dietary Needs", "Kitchen Setup"];
 
 const EMPTY_PROFILE: OnboardingProfile = {
   age: "",
@@ -83,8 +82,7 @@ export default function OnboardingPage() {
 
   const handleFinish = () => {
     saveProfile();
-    // router.push is skipped here — OAuth will navigate away;
-    // on return, useEffect detects saved profile and routes to /
+    router.push("/");
   };
 
   const goTo = (n: number) => setStep(n);
@@ -145,13 +143,10 @@ export default function OnboardingPage() {
             <StepKitchenSetup
               profile={profile}
               update={update}
-              onNext={() => goTo(4)}
+              onNext={handleFinish}
               onBack={() => goTo(2)}
-              onSkip={() => goTo(4)}
+              onSkip={handleFinish}
             />
-          )}
-          {step === 4 && (
-            <StepAuth onBack={() => goTo(3)} onFinish={handleFinish} />
           )}
         </div>
       </div>

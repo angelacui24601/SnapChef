@@ -13,15 +13,18 @@ interface RecipeOutputPanelProps {
   result: GenerateRecipeResponse | null;
   loading: boolean;
   userId: string | null;
+  isGuest: boolean;
+  requireAuth: (action: () => void) => void;
 }
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export default function RecipeOutputPanel({ result, loading, userId }: RecipeOutputPanelProps) {
+export default function RecipeOutputPanel({ result, loading, userId, isGuest, requireAuth }: RecipeOutputPanelProps) {
   const [selectedTabs, setSelectedTabs] = useState<number[]>([]);
   const [favoriteSourceKeys, setFavoriteSourceKeys] = useState<string[]>([]);
+  const [guestFavoriteSourceKeys, setGuestFavoriteSourceKeys] = useState<string[]>([]);
 
   useEffect(() => {
     setSelectedTabs(result?.meals.map(() => 0) ?? []);
@@ -56,26 +59,33 @@ export default function RecipeOutputPanel({ result, loading, userId }: RecipeOut
   };
 
   const handleFavoriteToggle = (mealType: MealType, dish: Dish) => {
-    if (!userId) {
-      return;
-    }
-
     const sourceKey = buildRecipeSourceKey(mealType, dish);
-    const nextIsFavorite = toggleFavoriteRecipe(userId, {
-      id: sourceKey,
-      sourceKey,
-      mealType,
-      title: dish.title,
-      estimatedCookTime: dish.estimatedCookTime,
-      steps: dish.steps,
-      nutrition: dish.nutrition,
-    });
+    requireAuth(() => {
+      if (userId) {
+        const nextIsFavorite = toggleFavoriteRecipe(userId, {
+          id: sourceKey,
+          sourceKey,
+          mealType,
+          title: dish.title,
+          estimatedCookTime: dish.estimatedCookTime,
+          steps: dish.steps,
+          nutrition: dish.nutrition,
+        });
 
-    setFavoriteSourceKeys((current) =>
-      nextIsFavorite
-        ? [sourceKey, ...current.filter((value) => value !== sourceKey)]
-        : current.filter((value) => value !== sourceKey),
-    );
+        setFavoriteSourceKeys((current) =>
+          nextIsFavorite
+            ? [sourceKey, ...current.filter((value) => value !== sourceKey)]
+            : current.filter((value) => value !== sourceKey),
+        );
+        return;
+      }
+
+      setGuestFavoriteSourceKeys((current) =>
+        current.includes(sourceKey)
+          ? current.filter((value) => value !== sourceKey)
+          : [sourceKey, ...current.filter((value) => value !== sourceKey)],
+      );
+    });
   };
 
   if (loading) {
@@ -104,7 +114,9 @@ export default function RecipeOutputPanel({ result, loading, userId }: RecipeOut
         const activeDishIndex = selectedTabs[mealIndex] ?? 0;
         const activeDish = meal.dishes[activeDishIndex];
         const activeDishKey = buildRecipeSourceKey(meal.type, activeDish);
-        const isFavorite = favoriteSourceKeys.includes(activeDishKey);
+        const isFavorite = userId
+          ? favoriteSourceKeys.includes(activeDishKey)
+          : guestFavoriteSourceKeys.includes(activeDishKey);
 
         return (
           <div key={`${meal.type}-${mealIndex}`} style={{ marginBottom: mealIndex === result.meals.length - 1 ? 0 : "40px" }}>
@@ -157,7 +169,6 @@ export default function RecipeOutputPanel({ result, loading, userId }: RecipeOut
               </div>
               <button
                 onClick={() => handleFavoriteToggle(meal.type, activeDish)}
-                disabled={!userId}
                 aria-label={isFavorite ? "Remove from favorites" : "Save to favorites"}
                 style={{
                   width: "44px",
@@ -165,20 +176,29 @@ export default function RecipeOutputPanel({ result, loading, userId }: RecipeOut
                   borderRadius: "50%",
                   border: isFavorite ? "1px solid #fecaca" : "1px solid #e5e7eb",
                   background: isFavorite ? "#fff1f2" : "white",
-                  cursor: userId ? "pointer" : "not-allowed",
+                  cursor: "pointer",
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  opacity: userId ? 1 : 0.5,
                   flexShrink: 0,
                 }}
-                title={userId ? (isFavorite ? "Remove from favorites" : "Save to favorites") : "Sign in to save favorites"}
+                title={userId
+                  ? (isFavorite ? "Remove from favorites" : "Save to favorites")
+                  : isGuest
+                    ? (isFavorite ? "Remove guest favorite" : "Save for this guest session")
+                    : "Sign in or continue as guest to save favorites"}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill={isFavorite ? "#ef4444" : "none"} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21s-6.7-4.35-9.33-8.02C.9 10.52 1.5 6.8 4.58 5.02c2.27-1.3 4.94-.64 6.42 1.05 1.48-1.69 4.15-2.35 6.42-1.05 3.08 1.78 3.68 5.5 1.91 7.96C18.7 16.65 12 21 12 21z" />
                 </svg>
               </button>
             </div>
+
+            {!userId && (
+              <p style={{ margin: "-10px 0 18px 0", fontSize: "0.82rem", color: "#6b7280" }}>
+                {isGuest ? "Guest favorites last for this session only." : "Sign in to sync favorites across devices, or continue as guest for a temporary list."}
+              </p>
+            )}
 
             <div style={{ marginBottom: "24px" }}>
               <h3 style={{ fontSize: "1.25rem", fontWeight: "bold", color: "#1f2937", margin: "0 0 16px 0" }}>Instructions</h3>
