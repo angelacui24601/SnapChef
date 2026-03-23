@@ -190,7 +190,8 @@ export default function KitchenStatePanel({
             }}
           >
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+              <path d="M12 3C8 6 5 10 5 14a7 7 0 0 0 14 0C19 10 16 6 12 3z" />
+              <line x1="12" y1="21" x2="12" y2="5" />
             </svg>
           </div>
           <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", margin: 0 }}>Ingredients</h2>
@@ -388,17 +389,19 @@ export default function KitchenStatePanel({
           animation: "fadeInUp 0.8s ease-out 0.4s both",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "24px" }}>
-          <div style={{ width: "40px", height: "40px", background: "rgba(249, 115, 22, 0.1)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center" }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 1v6m0 6v6m11-7h-6m-6 0H1m16.24-3.76l-4.24 4.24m-6-6L2.76 6.24m16.24 7.52l-4.24-4.24m-6 6L2.76 17.76" />
-            </svg>
-          </div>
-          <div>
+        <div style={{ marginBottom: "24px" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "6px" }}>
+            <div style={{ width: "40px", height: "40px", background: "rgba(249, 115, 22, 0.1)", borderRadius: "12px", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#f97316" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M4 6h16" />
+                <path d="M4 6c0 7 3 11 8 11s8-4 8-11" />
+                <path d="M8 19h8" />
+                <path d="M12 19v2" />
+              </svg>
+            </div>
             <h2 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", margin: 0 }}>Meals to Prepare</h2>
-            <p style={{ margin: "6px 0 0 0", color: "#6b7280", fontSize: "0.95rem" }}>Choose breakfast, lunch, dinner, or snack for each meal and how many people it should feed.</p>
           </div>
+          <p style={{ margin: "0 0 0 52px", color: "#6b7280", fontSize: "0.95rem" }}>Choose breakfast, lunch, dinner, or snack for each meal and how many people it should feed.</p>
         </div>
 
         <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
