@@ -1,5 +1,5 @@
-import Home from '../components/Home.vue'
+import { redirect } from "next/navigation";
 
 export default function SnapChefPage() {
-  return <Home />
+  redirect("/");
 }
