@@ -3,6 +3,8 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { useSnapChefAuth } from "../../components/auth/AuthProvider";
+import type { UserPreferencesRecord } from "../../services/backendApi";
 import StepBasicInfo from "../../components/onboarding/StepBasicInfo";
 import StepDietaryNeeds from "../../components/onboarding/StepDietaryNeeds";
 import StepKitchenSetup from "../../components/onboarding/StepKitchenSetup";
@@ -33,56 +35,94 @@ const EMPTY_PROFILE: OnboardingProfile = {
   kitchenImage: null,
 };
 
+function hasSavedPreferences(preferences: UserPreferencesRecord | null) {
+  if (!preferences) {
+    return false;
+  }
+
+  return Boolean(
+    preferences.age > 0 ||
+    preferences.allergies.length > 0 ||
+    preferences.religious.length > 0 ||
+    preferences.medical.trim().length > 0 ||
+    preferences.sex ||
+    preferences.goal ||
+    preferences.kitchenTools.length > 0 ||
+    preferences.kitchenImage,
+  );
+}
+
+function toOnboardingProfile(preferences: UserPreferencesRecord | null): OnboardingProfile {
+  if (!preferences) {
+    return EMPTY_PROFILE;
+  }
+
+  return {
+    age: preferences.age || "",
+    sex: preferences.sex,
+    goal: preferences.goal,
+    customGoal: preferences.customGoal,
+    allergies: preferences.allergies,
+    medical: preferences.medical,
+    religious: preferences.religious,
+    kitchenTools: preferences.kitchenTools,
+    kitchenImage: preferences.kitchenImage,
+  };
+}
+
+function toPreferenceRecord(profile: OnboardingProfile): UserPreferencesRecord {
+  return {
+    age: profile.age === "" ? 0 : Number(profile.age),
+    sex: profile.sex,
+    goal: profile.goal,
+    customGoal: profile.customGoal,
+    allergies: profile.allergies,
+    medical: profile.medical,
+    religious: profile.religious,
+    kitchenTools: profile.kitchenTools,
+    kitchenImage: profile.kitchenImage,
+  };
+}
+
 export default function OnboardingPage() {
   const router = useRouter();
+  const { isLoadingUserData, preferences, saveUserPreferences, setGuestPreferences, syncError } = useSnapChefAuth();
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<OnboardingProfile>(EMPTY_PROFILE);
+  const [submitError, setSubmitError] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
 
-
-  // Redirect if profile already exists
   useEffect(() => {
-    const saved = localStorage.getItem("userProfile");
-    if (!saved) return;
-    try {
-      const p = JSON.parse(saved);
-      if (
-        p.age ||
-        p.allergies?.length ||
-        p.religiousRestrictions?.length ||
-        p.medicalRestrictions?.length
-      ) {
-        router.push("/");
-      }
-    } catch {
-      // corrupt localStorage — ignore
+    if (!isLoadingUserData) {
+      setProfile(toOnboardingProfile(preferences));
     }
-  }, [router]);
+  }, [isLoadingUserData, preferences]);
+
+  useEffect(() => {
+    if (!isLoadingUserData && hasSavedPreferences(preferences)) {
+      router.push("/");
+    }
+  }, [isLoadingUserData, preferences, router]);
 
   const update = (fields: Partial<OnboardingProfile>) => {
     setProfile((prev) => ({ ...prev, ...fields }));
   };
 
-  const saveProfile = () => {
-    localStorage.setItem(
-      "userProfile",
-      JSON.stringify({
-        age: profile.age === "" ? 0 : Number(profile.age),
-        sex: profile.sex,
-        goal: profile.goal,
-        customGoal: profile.customGoal,
-        // Preserve backward-compatible keys used by the API route + sidebar
-        allergies: profile.allergies,
-        religiousRestrictions: profile.religious,
-        medicalRestrictions: profile.medical ? [profile.medical] : [],
-        kitchenTools: profile.kitchenTools,
-        kitchenImage: profile.kitchenImage,
-      }),
-    );
-  };
+  const handleFinish = async () => {
+    setIsSaving(true);
+    setSubmitError("");
 
-  const handleFinish = () => {
-    saveProfile();
-    router.push("/");
+    try {
+      const nextPreferences = toPreferenceRecord(profile);
+      await saveUserPreferences(nextPreferences);
+      setGuestPreferences(nextPreferences);
+      router.push("/");
+    } catch (error) {
+      console.error("Failed to save onboarding preferences", error);
+      setSubmitError(error instanceof Error ? error.message : "Failed to save preferences.");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const goTo = (n: number) => setStep(n);
@@ -127,6 +167,11 @@ export default function OnboardingPage() {
 
         {/* Step content — key triggers re-mount + step-enter CSS animation */}
         <div key={step} className="px-7 py-8 step-enter">
+          {(submitError || syncError) && (
+            <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+              {submitError || syncError}
+            </div>
+          )}
           {step === 1 && (
             <StepBasicInfo profile={profile} update={update} onNext={() => goTo(2)} />
           )}
@@ -143,9 +188,10 @@ export default function OnboardingPage() {
             <StepKitchenSetup
               profile={profile}
               update={update}
-              onNext={handleFinish}
+              onNext={() => void handleFinish()}
               onBack={() => goTo(2)}
-              onSkip={handleFinish}
+              onSkip={() => void handleFinish()}
+              isSaving={isSaving}
             />
           )}
         </div>

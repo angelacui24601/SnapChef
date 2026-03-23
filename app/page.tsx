@@ -1,9 +1,8 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth, useUser } from "@clerk/nextjs";
 import { useSnapChefAuth } from "../components/auth/AuthProvider";
 import KitchenStatePanel from "../components/KitchenStatePanel";
 import RecipeOutputPanel from "../components/RecipeOutputPanel";
@@ -22,14 +21,25 @@ interface Ingredient {
 
 export default function HomePage() {
   const router = useRouter();
-  const { isLoaded: authLoaded, isSignedIn, userId } = useAuth();
-  const { user } = useUser();
-  const { isLoggedIn, isGuest, openAuthModal, requireAuth } = useSnapChefAuth();
+  const {
+    clerkUser,
+    isGuest,
+    isLoadingUserData,
+    isLoggedIn,
+    isSyncingUser,
+    openAuthModal,
+    preferences,
+    requireAuth,
+    syncError,
+    userId,
+  } = useSnapChefAuth();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
   const [result, setResult] = useState<GenerateRecipeResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const profileMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const saved = localStorage.getItem("kitchenState");
@@ -72,16 +82,6 @@ export default function HomePage() {
     setResult(null);
 
     try {
-      const savedProfile = localStorage.getItem("userProfile");
-      let userProfile = {};
-      if (savedProfile) {
-        try {
-          userProfile = JSON.parse(savedProfile);
-        } catch (loadError) {
-          console.warn("Failed to parse userProfile", loadError);
-        }
-      }
-
       const data = await generateRecipe({
         ingredients: ingredients.map((ingredient) => ingredient.name),
         constraints: {
@@ -90,7 +90,14 @@ export default function HomePage() {
           effort: "Medium",
         },
         mode: undefined,
-        userProfile,
+        userProfile: preferences
+          ? {
+              age: preferences.age || undefined,
+              allergies: preferences.allergies,
+              religiousRestrictions: preferences.religious,
+              medicalRestrictions: preferences.medical ? [preferences.medical] : [],
+            }
+          : undefined,
         kitchenState: {
           ingredients: ingredients.map((ingredient) => ({
             name: ingredient.name,
@@ -110,7 +117,7 @@ export default function HomePage() {
   };
 
   const handleProfileClick = () => {
-    if (isLoggedIn) {
+    if (isLoggedIn && userId) {
       router.push("/profile");
       return;
     }
@@ -156,68 +163,129 @@ export default function HomePage() {
             <div className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 md:block">
               {isLoggedIn ? "Signed in" : isGuest ? "Guest mode" : "Sign in to save your recipes"}
             </div>
-            <button
-              onClick={handleProfileClick}
-              aria-label={isLoggedIn ? "Open profile" : "Open authentication"}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "10px",
-                background: "#f8fafc",
-                border: "1px solid #e5e7eb",
-                borderRadius: "999px",
-                padding: "6px 12px 6px 8px",
-                cursor: "pointer",
-              }}
+            <div
+              ref={profileMenuRef}
+              style={{ position: "relative" }}
+              onMouseEnter={() => (isLoggedIn || isGuest) && setShowProfileMenu(true)}
+              onMouseLeave={() => setShowProfileMenu(false)}
             >
-              {isLoggedIn && user?.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={user.imageUrl}
-                  alt="Profile"
-                  width={30}
-                  height={30}
-                  style={{ borderRadius: "50%", flexShrink: 0 }}
-                />
-              ) : (
+              <button
+                onClick={handleProfileClick}
+                aria-label={isLoggedIn ? "Open profile" : "Open authentication"}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  background: "#f8fafc",
+                  border: "1px solid #e5e7eb",
+                  borderRadius: "999px",
+                  padding: "6px 12px 6px 8px",
+                  cursor: "pointer",
+                }}
+              >
+                {isLoggedIn && clerkUser?.imageUrl ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={clerkUser.imageUrl}
+                    alt="Profile"
+                    width={30}
+                    height={30}
+                    style={{ borderRadius: "50%", flexShrink: 0 }}
+                  />
+                ) : (
+                  <div
+                    style={{
+                      width: "30px",
+                      height: "30px",
+                      borderRadius: "50%",
+                      background: isLoggedIn ? "linear-gradient(135deg, #22c55e, #16a34a)" : "#e5e7eb",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      color: isLoggedIn ? "white" : "#4b5563",
+                      flexShrink: 0,
+                    }}
+                  >
+                    {isLoggedIn ? (
+                      <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>
+                        {(clerkUser?.fullName ?? clerkUser?.email ?? "?")[0].toUpperCase()}
+                      </span>
+                    ) : (
+                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    )}
+                  </div>
+                )}
+                <div style={{ textAlign: "left" }}>
+                  <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>
+                    {isLoggedIn ? "Profile" : isGuest ? "Guest" : "Account"}
+                  </div>
+                  <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {isLoggedIn
+                      ? (clerkUser?.fullName ?? clerkUser?.email ?? (isSyncingUser ? "Syncing account..." : "Signed in"))
+                      : isGuest
+                        ? "Browsing without saving"
+                        : "Open auth options"}
+                  </div>
+                </div>
+              </button>
+
+              {/* Hover dropdown — only when logged in or guest */}
+              {showProfileMenu && (
                 <div
                   style={{
-                    width: "30px",
-                    height: "30px",
-                    borderRadius: "50%",
-                    background: isLoggedIn ? "linear-gradient(135deg, #22c55e, #16a34a)" : "#e5e7eb",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    color: isLoggedIn ? "white" : "#4b5563",
-                    flexShrink: 0,
+                    position: "absolute",
+                    top: "calc(100% + 8px)",
+                    right: 0,
+                    background: "white",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "14px",
+                    boxShadow: "0 8px 28px rgba(0, 0, 0, 0.12)",
+                    zIndex: 200,
+                    minWidth: "210px",
+                    overflow: "hidden",
                   }}
                 >
-                  {isLoggedIn ? (
-                    <span style={{ fontSize: "0.8rem", fontWeight: 700 }}>
-                      {(user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "?")[0].toUpperCase()}
-                    </span>
-                  ) : (
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  {isLoggedIn && clerkUser && (
+                    <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid #f3f4f6" }}>
+                      <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {clerkUser.fullName ?? clerkUser.email}
+                      </div>
+                      <div style={{ fontSize: "0.72rem", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                        {clerkUser.email}
+                      </div>
+                    </div>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => { setShowProfileMenu(false); router.push("/profile"); }}
+                    style={{
+                      width: "100%",
+                      padding: "11px 14px",
+                      background: "none",
+                      border: "none",
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: "10px",
+                      fontSize: "0.875rem",
+                      color: "#374151",
+                      textAlign: "left",
+                    }}
+                    onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
+                    onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
+                  >
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
                       <circle cx="12" cy="7" r="4" />
                     </svg>
-                  )}
+                    Profile &amp; Favorites
+                  </button>
                 </div>
               )}
-              <div style={{ textAlign: "left" }}>
-                <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>
-                  {isLoggedIn ? "Profile" : isGuest ? "Guest" : "Account"}
-                </div>
-                <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {isLoggedIn
-                    ? (user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Signed in")
-                    : isGuest
-                      ? "Browsing without saving"
-                      : "Open auth options"}
-                </div>
-              </div>
-            </button>
+            </div>
           </div>
         </div>
       </header>
@@ -239,6 +307,12 @@ export default function HomePage() {
                 Open auth options
               </button>
             </div>
+          </div>
+        )}
+
+        {syncError && (
+          <div className="mb-5 rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
+            {syncError}
           </div>
         )}
 
@@ -288,9 +362,7 @@ export default function HomePage() {
               <RecipeOutputPanel
                 result={result}
                 loading={loading}
-                userId={authLoaded && isSignedIn ? userId ?? null : null}
                 isGuest={isGuest}
-                requireAuth={requireAuth}
               />
             </div>
           </div>
@@ -298,6 +370,7 @@ export default function HomePage() {
           <div style={{ flex: "0 0 280px" }}>
             <UserProfileSidebar
               isGuest={isGuest}
+              isLoading={isLoadingUserData}
               onEditProfile={() => requireAuth(() => router.push("/profile"))}
             />
           </div>

@@ -11,9 +11,10 @@ interface Props {
   onNext: () => void;
   onBack: () => void;
   onSkip: () => void;
+  isSaving?: boolean;
 }
 
-export default function StepKitchenSetup({ profile, update, onNext, onBack, onSkip }: Props) {
+export default function StepKitchenSetup({ profile, update, onNext, onBack, onSkip, isSaving = false }: Props) {
   const [isDragOver, setIsDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -37,7 +38,7 @@ export default function StepKitchenSetup({ profile, update, onNext, onBack, onSk
 
   return (
     <div>
-      <h1 className="text-[1.6rem] font-bold text-gray-900 mb-1">What's in your kitchen?</h1>
+      <h1 className="text-[1.6rem] font-bold text-gray-900 mb-1">What&apos;s in your kitchen?</h1>
       <p className="text-sm text-gray-400 mb-8">Help us tailor recipes to your tools — optional</p>
 
       <div className="space-y-6">
@@ -155,12 +156,14 @@ export default function StepKitchenSetup({ profile, update, onNext, onBack, onSk
         </button>
         <button
           onClick={onNext}
+          disabled={isSaving}
           className="flex-1 py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl text-sm font-semibold transition-colors"
         >
-          Save Preferences
+          {isSaving ? "Saving..." : "Save Preferences"}
         </button>
         <button
           onClick={onSkip}
+          disabled={isSaving}
           className="px-5 py-3 rounded-xl text-sm font-medium text-gray-400 hover:text-gray-600 transition-colors"
         >
           Skip

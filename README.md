@@ -20,6 +20,64 @@ You can start editing the page by modifying `app/page.tsx`. The page auto-update
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Backend API
+
+This repo also includes a standalone Node.js + Express + PostgreSQL backend for SnapChef.
+
+### Folder structure
+
+- `db/`
+- `controllers/`
+- `routes/`
+- `server.js`
+
+### Setup
+
+1. Copy `.env.example` to `.env` and update the PostgreSQL connection values.
+2. Create the database tables with `db/schema.sql`.
+3. Start the backend with `npm run dev:api`.
+
+### API endpoints
+
+- `POST /api/preferences`
+- `GET /api/preferences/:userId`
+- `POST /api/favorite`
+- `DELETE /api/favorite`
+- `GET /api/favorites/:userId`
+
+### Example payloads
+
+Save preferences:
+
+```json
+{
+	"email": "chef@example.com",
+	"age": 27,
+	"sex": "female",
+	"goal": "meal_prep",
+	"customGoal": "high protein lunches",
+	"allergies": ["nuts"],
+	"medical": "low sodium",
+	"religious": "halal",
+	"kitchenTools": ["oven", "air fryer"],
+	"kitchenImage": "https://cdn.example.com/kitchen.png"
+}
+```
+
+Add favorite with recipe payload:
+
+```json
+{
+	"userId": "00000000-0000-0000-0000-000000000001",
+	"recipe": {
+		"title": "Sheet Pan Chicken",
+		"cookTime": 25,
+		"ingredients": ["chicken", "broccoli", "olive oil"],
+		"steps": ["Preheat oven", "Season chicken", "Roast until done"]
+	}
+}
+```
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

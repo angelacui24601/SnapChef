@@ -1,90 +1,36 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import type { Dish, GenerateRecipeResponse, MealType } from "../services/apiService";
-import {
-  buildRecipeSourceKey,
-  getFavoritesUpdatedEventName,
-  readFavoriteRecipes,
-  toggleFavoriteRecipe,
-} from "../services/favorites";
+import { useState } from "react";
+import type { Dish, GenerateRecipeResponse } from "../services/apiService";
+import { useSnapChefAuth } from "./auth/AuthProvider";
+import { buildRecipeSourceKey } from "../services/favorites";
 
 interface RecipeOutputPanelProps {
   result: GenerateRecipeResponse | null;
   loading: boolean;
-  userId: string | null;
   isGuest: boolean;
-  requireAuth: (action: () => void) => void;
 }
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export default function RecipeOutputPanel({ result, loading, userId, isGuest, requireAuth }: RecipeOutputPanelProps) {
-  const [selectedTabs, setSelectedTabs] = useState<number[]>([]);
-  const [favoriteSourceKeys, setFavoriteSourceKeys] = useState<string[]>([]);
-  const [guestFavoriteSourceKeys, setGuestFavoriteSourceKeys] = useState<string[]>([]);
-
-  useEffect(() => {
-    setSelectedTabs(result?.meals.map(() => 0) ?? []);
-  }, [result]);
-
-  useEffect(() => {
-    if (!userId) {
-      setFavoriteSourceKeys([]);
-      return;
-    }
-
-    const syncFavorites = () => {
-      setFavoriteSourceKeys(readFavoriteRecipes(userId).map((favorite) => favorite.sourceKey));
-    };
-
-    syncFavorites();
-    window.addEventListener("storage", syncFavorites);
-    window.addEventListener(getFavoritesUpdatedEventName(), syncFavorites);
-
-    return () => {
-      window.removeEventListener("storage", syncFavorites);
-      window.removeEventListener(getFavoritesUpdatedEventName(), syncFavorites);
-    };
-  }, [userId]);
+export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOutputPanelProps) {
+  const { favorites, isLoggedIn, isSyncingUser, requireAuth, toggleFavoriteDish, userId } = useSnapChefAuth();
+  const [selectedTabs, setSelectedTabs] = useState<Record<number, number>>({});
+  const favoriteSourceKeys = favorites.map((favorite) => favorite.sourceKey);
 
   const handleTabChange = (mealIndex: number, dishIndex: number) => {
     setSelectedTabs((current) => {
-      const next = [...current];
+      const next = { ...current };
       next[mealIndex] = dishIndex;
       return next;
     });
   };
 
-  const handleFavoriteToggle = (mealType: MealType, dish: Dish) => {
-    const sourceKey = buildRecipeSourceKey(mealType, dish);
-    requireAuth(() => {
-      if (userId) {
-        const nextIsFavorite = toggleFavoriteRecipe(userId, {
-          id: sourceKey,
-          sourceKey,
-          mealType,
-          title: dish.title,
-          estimatedCookTime: dish.estimatedCookTime,
-          steps: dish.steps,
-          nutrition: dish.nutrition,
-        });
-
-        setFavoriteSourceKeys((current) =>
-          nextIsFavorite
-            ? [sourceKey, ...current.filter((value) => value !== sourceKey)]
-            : current.filter((value) => value !== sourceKey),
-        );
-        return;
-      }
-
-      setGuestFavoriteSourceKeys((current) =>
-        current.includes(sourceKey)
-          ? current.filter((value) => value !== sourceKey)
-          : [sourceKey, ...current.filter((value) => value !== sourceKey)],
-      );
+  const handleFavoriteToggle = (dish: Dish) => {
+    requireAuth(async () => {
+      await toggleFavoriteDish(dish);
     });
   };
 
@@ -111,12 +57,10 @@ export default function RecipeOutputPanel({ result, loading, userId, isGuest, re
   return (
     <div style={{ background: "white", borderRadius: "24px", padding: "32px", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)", border: "1px solid rgba(255, 255, 255, 0.8)" }}>
       {result.meals.map((meal, mealIndex) => {
-        const activeDishIndex = selectedTabs[mealIndex] ?? 0;
+        const activeDishIndex = Math.min(selectedTabs[mealIndex] ?? 0, meal.dishes.length - 1);
         const activeDish = meal.dishes[activeDishIndex];
-        const activeDishKey = buildRecipeSourceKey(meal.type, activeDish);
-        const isFavorite = userId
-          ? favoriteSourceKeys.includes(activeDishKey)
-          : guestFavoriteSourceKeys.includes(activeDishKey);
+        const activeDishKey = buildRecipeSourceKey(activeDish);
+        const isFavorite = favoriteSourceKeys.includes(activeDishKey);
 
         return (
           <div key={`${meal.type}-${mealIndex}`} style={{ marginBottom: mealIndex === result.meals.length - 1 ? 0 : "40px" }}>
@@ -168,7 +112,7 @@ export default function RecipeOutputPanel({ result, loading, userId, isGuest, re
                 </p>
               </div>
               <button
-                onClick={() => handleFavoriteToggle(meal.type, activeDish)}
+                onClick={() => handleFavoriteToggle(activeDish)}
                 aria-label={isFavorite ? "Remove from favorites" : "Save to favorites"}
                 style={{
                   width: "44px",
@@ -186,7 +130,9 @@ export default function RecipeOutputPanel({ result, loading, userId, isGuest, re
                   ? (isFavorite ? "Remove from favorites" : "Save to favorites")
                   : isGuest
                     ? (isFavorite ? "Remove guest favorite" : "Save for this guest session")
-                    : "Sign in or continue as guest to save favorites"}
+                    : isLoggedIn && isSyncingUser
+                      ? "Syncing your account..."
+                      : "Sign in or continue as guest to save favorites"}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill={isFavorite ? "#ef4444" : "none"} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21s-6.7-4.35-9.33-8.02C.9 10.52 1.5 6.8 4.58 5.02c2.27-1.3 4.94-.64 6.42 1.05 1.48-1.69 4.15-2.35 6.42-1.05 3.08 1.78 3.68 5.5 1.91 7.96C18.7 16.65 12 21 12 21z" />

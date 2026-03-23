@@ -32,15 +32,19 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [isOpen, onClose]);
 
-  useEffect(() => {
-    if (isOpen) {
-      setError("");
-    }
-  }, [isOpen]);
-
   if (!isOpen) {
     return null;
   }
+
+  const handleClose = () => {
+    setError("");
+    onClose();
+  };
+
+  const handleGuest = () => {
+    setError("");
+    onContinueAsGuest();
+  };
 
   const handleGoogle = async () => {
     if (!signIn || isBusy) {
@@ -50,11 +54,14 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     setError("");
 
     try {
-      await signIn.sso({
+      const { error: ssoError } = await signIn.sso({
         strategy: "oauth_google",
         redirectUrl: "/sso-callback",
         redirectCallbackUrl: "/",
       });
+      if (ssoError) {
+        setError(ssoError.longMessage ?? "Google sign-in failed. Please try email or continue as guest.");
+      }
     } catch (authError) {
       console.error("Google sign-in failed", authError);
       setError("Google sign-in is unavailable right now. Try email or guest mode.");
@@ -69,11 +76,14 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     setError("");
 
     try {
-      await signIn.sso({
+      const { error: ssoError } = await signIn.sso({
         strategy: "oauth_apple",
         redirectUrl: "/sso-callback",
         redirectCallbackUrl: "/",
       });
+      if (ssoError) {
+        setError(ssoError.longMessage ?? "Apple sign-in failed. Please try email or continue as guest.");
+      }
     } catch (authError) {
       console.error("Apple sign-in failed", authError);
       setError("Apple sign-in is unavailable right now. Try email or guest mode.");
@@ -86,7 +96,7 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     }
 
     setError("");
-    onClose();
+    handleClose();
     clerk.openSignIn({
       fallbackRedirectUrl: "/",
       signUpFallbackRedirectUrl: "/",
@@ -99,7 +109,7 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
       className="fixed inset-0 z-[100] flex items-center justify-center bg-slate-950/55 px-4 py-6 backdrop-blur-md auth-modal-overlay"
       onClick={(event) => {
         if (event.target === event.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
       role="presentation"
@@ -159,7 +169,7 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
 
         <button
           type="button"
-          onClick={onContinueAsGuest}
+          onClick={handleGuest}
           className="mt-5 w-full text-center text-sm font-medium text-slate-500 transition hover:text-slate-700"
         >
           Continue as Guest
