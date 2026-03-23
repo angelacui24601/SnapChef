@@ -1,453 +1,157 @@
 "use client";
 
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import Image from "next/image";
+import StepBasicInfo from "../../components/onboarding/StepBasicInfo";
+import StepDietaryNeeds from "../../components/onboarding/StepDietaryNeeds";
+import StepKitchenSetup from "../../components/onboarding/StepKitchenSetup";
+import StepAuth from "../../components/onboarding/StepAuth";
+
+export interface OnboardingProfile {
+  age: number | "";
+  sex: string;
+  goal: string;
+  customGoal: string;
+  allergies: string[];
+  medical: string;
+  religious: string[];
+  kitchenTools: string[];
+  kitchenImage: string | null;
+}
+
+const STEPS = ["Basic Info", "Dietary Needs", "Kitchen Setup", "Save Account"];
+
+const EMPTY_PROFILE: OnboardingProfile = {
+  age: "",
+  sex: "",
+  goal: "",
+  customGoal: "",
+  allergies: [],
+  medical: "",
+  religious: [],
+  kitchenTools: [],
+  kitchenImage: null,
+};
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const [age, setAge] = useState(0);
-  const [allergies, setAllergies] = useState<string[]>([]);
-  const [newAllergy, setNewAllergy] = useState("");
-  const [religiousRestrictions, setReligiousRestrictions] = useState<string[]>([]);
-  const [newReligiousRestriction, setNewReligiousRestriction] = useState("");
-  const [medicalRestrictions, setMedicalRestrictions] = useState<string[]>([]);
-  const [newMedicalRestriction, setNewMedicalRestriction] = useState("");
+  const [step, setStep] = useState(1);
+  const [profile, setProfile] = useState<OnboardingProfile>(EMPTY_PROFILE);
 
-  // Check if profile already exists
+
+  // Redirect if profile already exists
   useEffect(() => {
     const saved = localStorage.getItem("userProfile");
-    if (saved) {
-      try {
-        const profile = JSON.parse(saved);
-        if (profile.age || profile.allergies?.length || profile.religiousRestrictions?.length || profile.medicalRestrictions?.length) {
-          router.push("/");
-          return;
-        }
-      } catch (error) {
-        console.warn("Failed to parse existing profile", error);
+    if (!saved) return;
+    try {
+      const p = JSON.parse(saved);
+      if (
+        p.age ||
+        p.allergies?.length ||
+        p.religiousRestrictions?.length ||
+        p.medicalRestrictions?.length
+      ) {
+        router.push("/");
       }
+    } catch {
+      // corrupt localStorage — ignore
     }
   }, [router]);
 
-  const addAllergy = () => {
-    const trimmed = newAllergy.trim();
-    if (trimmed && !allergies.includes(trimmed)) {
-      setAllergies([...allergies, trimmed]);
-      setNewAllergy("");
-    }
+  const update = (fields: Partial<OnboardingProfile>) => {
+    setProfile((prev) => ({ ...prev, ...fields }));
   };
 
-  const removeAllergy = (index: number) => {
-    setAllergies(allergies.filter((_, i) => i !== index));
+  const saveProfile = () => {
+    localStorage.setItem(
+      "userProfile",
+      JSON.stringify({
+        age: profile.age === "" ? 0 : Number(profile.age),
+        sex: profile.sex,
+        goal: profile.goal,
+        customGoal: profile.customGoal,
+        // Preserve backward-compatible keys used by the API route + sidebar
+        allergies: profile.allergies,
+        religiousRestrictions: profile.religious,
+        medicalRestrictions: profile.medical ? [profile.medical] : [],
+        kitchenTools: profile.kitchenTools,
+        kitchenImage: profile.kitchenImage,
+      }),
+    );
   };
 
-  const addReligiousRestriction = () => {
-    const trimmed = newReligiousRestriction.trim();
-    if (trimmed && !religiousRestrictions.includes(trimmed)) {
-      setReligiousRestrictions([...religiousRestrictions, trimmed]);
-      setNewReligiousRestriction("");
-    }
-  };
-
-  const removeReligiousRestriction = (index: number) => {
-    setReligiousRestrictions(religiousRestrictions.filter((_, i) => i !== index));
-  };
-
-  const addMedicalRestriction = () => {
-    const trimmed = newMedicalRestriction.trim();
-    if (trimmed && !medicalRestrictions.includes(trimmed)) {
-      setMedicalRestrictions([...medicalRestrictions, trimmed]);
-      setNewMedicalRestriction("");
-    }
-  };
-
-  const removeMedicalRestriction = (index: number) => {
-    setMedicalRestrictions(medicalRestrictions.filter((_, i) => i !== index));
-  };
-
-  const handleSubmit = () => {
-    const profile = {
-      age,
-      allergies,
-      religiousRestrictions,
-      medicalRestrictions,
-    };
-
-    localStorage.setItem("userProfile", JSON.stringify(profile));
+  const handleFinish = () => {
+    saveProfile();
     router.push("/");
   };
 
+  const goTo = (n: number) => setStep(n);
+
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      padding: '20px'
-    }}>
-      <div style={{
-        maxWidth: '600px',
-        width: '100%',
-        background: 'white',
-        borderRadius: '24px',
-        padding: '40px',
-        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
-        animation: 'fadeInUp 0.6s ease-out'
-      }}>
-        {/* Header */}
-        <div style={{ marginBottom: '28px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
-            <Image
-              src="/snapchef-logo.png"
-              alt="SnapChef logo"
-              width={44}
-              height={44}
-              style={{ borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
-              priority
-            />
-            <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1f2937', margin: 0 }}>
-              Welcome to SnapChef
-            </h1>
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-green-50/40 flex flex-col items-center justify-center px-4 py-10">
+      {/* Branding */}
+      <div className="flex items-center gap-2.5 mb-8">
+        <Image
+          src="/snapchef-logo.png"
+          alt="SnapChef"
+          width={36}
+          height={36}
+          className="rounded-xl object-cover"
+          priority
+        />
+        <span className="text-lg font-bold text-gray-800">SnapChef</span>
+      </div>
+
+      {/* Card */}
+      <div className="w-full max-w-lg bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        {/* Progress header */}
+        <div className="px-7 pt-6 pb-5 border-b border-gray-100">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-xs font-semibold text-gray-400 uppercase tracking-wider">
+              Step {step} of {STEPS.length}
+            </span>
+            <span className="text-xs font-semibold text-green-600">{STEPS[step - 1]}</span>
           </div>
-          <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
-            Let's personalize your cooking experience
-          </p>
+          <div className="flex gap-1.5">
+            {STEPS.map((_, i) => (
+              <div
+                key={i}
+                className="h-1.5 flex-1 rounded-full transition-all duration-300"
+                style={{
+                  background: i < step ? "linear-gradient(90deg, #22c55e, #16a34a)" : "#f1f5f9",
+                }}
+              />
+            ))}
+          </div>
         </div>
 
-        {/* Form */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-          {/* Age */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Age (optional)
-            </label>
-            <input
-              type="number"
-              min="0"
-              value={age}
-              onChange={(e) => setAge(Number(e.target.value))}
-              placeholder="Enter your age"
-              style={{
-                width: '100%',
-                padding: '12px 16px',
-                border: '2px solid #e5e7eb',
-                borderRadius: '12px',
-                fontSize: '1rem',
-                transition: 'border-color 0.3s ease',
-                outline: 'none'
-              }}
-              onFocus={(e) => {
-                e.currentTarget.style.borderColor = '#22c55e';
-              }}
-              onBlur={(e) => {
-                e.currentTarget.style.borderColor = '#e5e7eb';
-              }}
+        {/* Step content — key triggers re-mount + step-enter CSS animation */}
+        <div key={step} className="px-7 py-8 step-enter">
+          {step === 1 && (
+            <StepBasicInfo profile={profile} update={update} onNext={() => goTo(2)} />
+          )}
+          {step === 2 && (
+            <StepDietaryNeeds
+              profile={profile}
+              update={update}
+              onNext={() => goTo(3)}
+              onBack={() => goTo(1)}
+              onSkip={() => goTo(3)}
             />
-          </div>
-
-          {/* Allergies */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Allergies (optional)
-            </label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <input
-                value={newAllergy}
-                onChange={(e) => setNewAllergy(e.target.value)}
-                placeholder="Add allergy (e.g., nuts)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addAllergy();
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  transition: 'border-color 0.3s ease',
-                  outline: 'none'
-                }}
-                onFocus={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#22c55e';
-                }}
-                onBlur={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#e5e7eb';
-                }}
-              />
-              <button
-                onClick={addAllergy}
-                disabled={!newAllergy.trim()}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  background: !newAllergy.trim() ? '#d1d5db' : '#22c55e',
-                  color: 'white',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: !newAllergy.trim() ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Add
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {allergies.map((allergy, index) => (
-                <span
-                  key={`${allergy}-${index}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: '#fee2e2',
-                    color: '#991b1b',
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {allergy}
-                  <button
-                    onClick={() => removeAllergy(index)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      color: '#991b1b',
-                      fontSize: '1.2rem',
-                      lineHeight: '1'
-                    }}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Religious Restrictions */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Religious Restrictions (optional)
-            </label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <input
-                value={newReligiousRestriction}
-                onChange={(e) => setNewReligiousRestriction(e.target.value)}
-                placeholder="Add restriction (e.g., halal)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addReligiousRestriction();
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  transition: 'border-color 0.3s ease',
-                  outline: 'none'
-                }}
-                onFocus={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#22c55e';
-                }}
-                onBlur={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#e5e7eb';
-                }}
-              />
-              <button
-                onClick={addReligiousRestriction}
-                disabled={!newReligiousRestriction.trim()}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  background: !newReligiousRestriction.trim() ? '#d1d5db' : '#22c55e',
-                  color: 'white',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: !newReligiousRestriction.trim() ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Add
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {religiousRestrictions.map((restriction, index) => (
-                <span
-                  key={`${restriction}-${index}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: '#dbeafe',
-                    color: '#1e3a8a',
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {restriction}
-                  <button
-                    onClick={() => removeReligiousRestriction(index)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      color: '#1e3a8a',
-                      fontSize: '1.2rem',
-                      lineHeight: '1'
-                    }}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Medical Restrictions */}
-          <div>
-            <label style={{
-              display: 'block',
-              fontSize: '0.9rem',
-              fontWeight: '600',
-              color: '#374151',
-              marginBottom: '8px'
-            }}>
-              Medical Restrictions (optional)
-            </label>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
-              <input
-                value={newMedicalRestriction}
-                onChange={(e) => setNewMedicalRestriction(e.target.value)}
-                placeholder="Add restriction (e.g., low sodium)"
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') {
-                    e.preventDefault();
-                    addMedicalRestriction();
-                  }
-                }}
-                style={{
-                  flex: 1,
-                  padding: '12px 16px',
-                  border: '2px solid #e5e7eb',
-                  borderRadius: '12px',
-                  fontSize: '1rem',
-                  transition: 'border-color 0.3s ease',
-                  outline: 'none'
-                }}
-                onFocus={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#22c55e';
-                }}
-                onBlur={(e) => {
-                  (e.target as HTMLElement).style.borderColor = '#e5e7eb';
-                }}
-              />
-              <button
-                onClick={addMedicalRestriction}
-                disabled={!newMedicalRestriction.trim()}
-                style={{
-                  padding: '12px 20px',
-                  borderRadius: '12px',
-                  background: !newMedicalRestriction.trim() ? '#d1d5db' : '#22c55e',
-                  color: 'white',
-                  fontWeight: '600',
-                  border: 'none',
-                  cursor: !newMedicalRestriction.trim() ? 'not-allowed' : 'pointer',
-                  transition: 'all 0.2s ease'
-                }}
-              >
-                Add
-              </button>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
-              {medicalRestrictions.map((restriction, index) => (
-                <span
-                  key={`${restriction}-${index}`}
-                  style={{
-                    display: 'inline-flex',
-                    alignItems: 'center',
-                    gap: '6px',
-                    background: '#fef3c7',
-                    color: '#92400e',
-                    padding: '6px 12px',
-                    borderRadius: '999px',
-                    fontSize: '0.9rem'
-                  }}
-                >
-                  {restriction}
-                  <button
-                    onClick={() => removeMedicalRestriction(index)}
-                    style={{
-                      border: 'none',
-                      background: 'transparent',
-                      cursor: 'pointer',
-                      color: '#92400e',
-                      fontSize: '1.2rem',
-                      lineHeight: '1'
-                    }}
-                  >
-                    ×
-                  </button>
-                </span>
-              ))}
-            </div>
-          </div>
-
-          {/* Submit Button */}
-          <button
-            onClick={handleSubmit}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-              color: 'white',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              padding: '16px 24px',
-              border: 'none',
-              borderRadius: '16px',
-              cursor: 'pointer',
-              transition: 'transform 0.2s ease, box-shadow 0.2s ease',
-              boxShadow: '0 4px 16px rgba(34, 197, 94, 0.3)',
-              marginTop: '16px'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.transform = 'translateY(-2px)';
-              e.currentTarget.style.boxShadow = '0 8px 24px rgba(34, 197, 94, 0.4)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.transform = 'translateY(0)';
-              e.currentTarget.style.boxShadow = '0 4px 16px rgba(34, 197, 94, 0.3)';
-            }}
-          >
-            Get Started
-          </button>
+          )}
+          {step === 3 && (
+            <StepKitchenSetup
+              profile={profile}
+              update={update}
+              onNext={() => goTo(4)}
+              onBack={() => goTo(2)}
+              onSkip={() => goTo(4)}
+            />
+          )}
+          {step === 4 && (
+            <StepAuth onBack={() => goTo(3)} onFinish={handleFinish} />
+          )}
         </div>
       </div>
     </div>

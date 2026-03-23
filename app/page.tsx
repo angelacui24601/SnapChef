@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useUser, useClerk } from "@clerk/nextjs";
 import KitchenStatePanel from "../components/KitchenStatePanel";
 import RecipeOutputPanel from "../components/RecipeOutputPanel";
 import UserProfileSidebar from "../components/UserProfileSidebar";
@@ -20,6 +21,8 @@ interface Ingredient {
 
 export default function HomePage() {
   const router = useRouter();
+  const { user, isLoaded: userLoaded } = useUser();
+  const { signOut } = useClerk();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
   const [result, setResult] = useState<GenerateRecipeResponse | null>(null);
@@ -161,7 +164,32 @@ export default function HomePage() {
             />
             <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
           </div>
-          <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {userLoaded && user ? (
+              <>
+                <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
+                  {user.primaryEmailAddress?.emailAddress ?? user.fullName}
+                </span>
+                <button
+                  onClick={() => signOut({ redirectUrl: "/onboarding" })}
+                  style={{
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    color: "#6b7280",
+                    background: "#f3f4f6",
+                    border: "none",
+                    borderRadius: "8px",
+                    padding: "6px 12px",
+                    cursor: "pointer",
+                  }}
+                >
+                  Sign out
+                </button>
+              </>
+            ) : (
+              <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>
+            )}
+          </div>
         </div>
       </header>
 

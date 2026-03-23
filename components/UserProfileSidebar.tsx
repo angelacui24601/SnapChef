@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useUser } from "@clerk/nextjs";
 
 interface UserProfile {
   age: number;
@@ -12,6 +13,7 @@ interface UserProfile {
 
 export default function UserProfileSidebar() {
   const router = useRouter();
+  const { user } = useUser();
   const [profile, setProfile] = useState<UserProfile>({
     age: 0,
     allergies: [],
@@ -93,6 +95,37 @@ export default function UserProfileSidebar() {
           Dietary Profile
         </h3>
       </div>
+
+      {/* Clerk user badge */}
+      {user && (
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: '10px',
+          padding: '10px 12px',
+          background: '#f0fdf4',
+          borderRadius: '10px',
+          marginBottom: '16px',
+          border: '1px solid #bbf7d0'
+        }}>
+          {user.imageUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.imageUrl} alt="" width={28} height={28} style={{ borderRadius: '50%', flexShrink: 0 }} />
+          ) : (
+            <div style={{ width: 28, height: 28, borderRadius: '50%', background: '#22c55e', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+              <span style={{ fontSize: '0.75rem', fontWeight: 700, color: 'white' }}>
+                {(user.fullName ?? user.primaryEmailAddress?.emailAddress ?? '?')[0].toUpperCase()}
+              </span>
+            </div>
+          )}
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: '0.8rem', fontWeight: 600, color: '#166534', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user.fullName ?? user.primaryEmailAddress?.emailAddress}
+            </div>
+            <div style={{ fontSize: '0.7rem', color: '#4ade80' }}>Signed in</div>
+          </div>
+        </div>
+      )}
 
       {/* Profile Content */}
       {hasProfileData ? (
