@@ -29,9 +29,14 @@ interface RecipeResponse {
   meals: MealPlan[];
 }
 
-const client = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+function getOpenAIClient() {
+  const apiKey = process.env.OPENAI_API_KEY;
+  if (!apiKey) {
+    throw new Error("OPENAI_API_KEY is not configured");
+  }
+
+  return new OpenAI({ apiKey });
+}
 
 const ALLOWED_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
@@ -163,6 +168,7 @@ function parseRecipeResponse(response: string, requestedMeals: MealRequest[]): R
 
 export async function POST(req: Request) {
   try {
+    const client = getOpenAIClient();
     const { ingredients, cuisine, constraints, mode, userProfile, kitchenState, meals } = await req.json();
 
     if (!ingredients || !Array.isArray(ingredients) || ingredients.length === 0) {
