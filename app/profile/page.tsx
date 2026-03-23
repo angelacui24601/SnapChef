@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 
@@ -101,18 +102,23 @@ export default function ProfilePage() {
           <div style={{
             width: '80px',
             height: '80px',
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
+            background: 'white',
             borderRadius: '24px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            boxShadow: '0 8px 32px rgba(34, 197, 94, 0.2)'
+            boxShadow: '0 8px 32px rgba(34, 197, 94, 0.2)',
+            overflow: 'hidden'
           }}>
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
-            </svg>
+            <Image
+              src="/snapchef-logo.png"
+              alt="SnapChef logo"
+              width={80}
+              height={80}
+              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              priority
+            />
           </div>
           <h1 style={{
             fontSize: '2.5rem',

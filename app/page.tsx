@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import KitchenStatePanel from "../components/KitchenStatePanel";
@@ -176,18 +177,24 @@ export default function HomePage() {
             style={{
               width: "80px",
               height: "80px",
-              background: "linear-gradient(135deg, #22c55e, #16a34a)",
+              background: "white",
               borderRadius: "24px",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               margin: "0 auto 20px",
               boxShadow: "0 8px 32px rgba(34, 197, 94, 0.2)",
+              overflow: "hidden",
             }}
           >
-            <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 100 4m0-4v2m0-6V4" />
-            </svg>
+            <Image
+              src="/snapchef-logo.png"
+              alt="SnapChef logo"
+              width={80}
+              height={80}
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              priority
+            />
           </div>
           <h1
             style={{
