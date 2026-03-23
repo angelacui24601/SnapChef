@@ -1,23 +1,51 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { GenerateRecipeResponse } from "../services/apiService";
+import type { Dish, GenerateRecipeResponse, MealType } from "../services/apiService";
+import {
+  buildRecipeSourceKey,
+  getFavoritesUpdatedEventName,
+  readFavoriteRecipes,
+  toggleFavoriteRecipe,
+} from "../services/favorites";
 
 interface RecipeOutputPanelProps {
   result: GenerateRecipeResponse | null;
   loading: boolean;
+  userId: string | null;
 }
 
 function titleCase(value: string): string {
   return value.charAt(0).toUpperCase() + value.slice(1);
 }
 
-export default function RecipeOutputPanel({ result, loading }: RecipeOutputPanelProps) {
+export default function RecipeOutputPanel({ result, loading, userId }: RecipeOutputPanelProps) {
   const [selectedTabs, setSelectedTabs] = useState<number[]>([]);
+  const [favoriteSourceKeys, setFavoriteSourceKeys] = useState<string[]>([]);
 
   useEffect(() => {
     setSelectedTabs(result?.meals.map(() => 0) ?? []);
   }, [result]);
+
+  useEffect(() => {
+    if (!userId) {
+      setFavoriteSourceKeys([]);
+      return;
+    }
+
+    const syncFavorites = () => {
+      setFavoriteSourceKeys(readFavoriteRecipes(userId).map((favorite) => favorite.sourceKey));
+    };
+
+    syncFavorites();
+    window.addEventListener("storage", syncFavorites);
+    window.addEventListener(getFavoritesUpdatedEventName(), syncFavorites);
+
+    return () => {
+      window.removeEventListener("storage", syncFavorites);
+      window.removeEventListener(getFavoritesUpdatedEventName(), syncFavorites);
+    };
+  }, [userId]);
 
   const handleTabChange = (mealIndex: number, dishIndex: number) => {
     setSelectedTabs((current) => {
@@ -25,6 +53,29 @@ export default function RecipeOutputPanel({ result, loading }: RecipeOutputPanel
       next[mealIndex] = dishIndex;
       return next;
     });
+  };
+
+  const handleFavoriteToggle = (mealType: MealType, dish: Dish) => {
+    if (!userId) {
+      return;
+    }
+
+    const sourceKey = buildRecipeSourceKey(mealType, dish);
+    const nextIsFavorite = toggleFavoriteRecipe(userId, {
+      id: sourceKey,
+      sourceKey,
+      mealType,
+      title: dish.title,
+      estimatedCookTime: dish.estimatedCookTime,
+      steps: dish.steps,
+      nutrition: dish.nutrition,
+    });
+
+    setFavoriteSourceKeys((current) =>
+      nextIsFavorite
+        ? [sourceKey, ...current.filter((value) => value !== sourceKey)]
+        : current.filter((value) => value !== sourceKey),
+    );
   };
 
   if (loading) {
@@ -52,6 +103,8 @@ export default function RecipeOutputPanel({ result, loading }: RecipeOutputPanel
       {result.meals.map((meal, mealIndex) => {
         const activeDishIndex = selectedTabs[mealIndex] ?? 0;
         const activeDish = meal.dishes[activeDishIndex];
+        const activeDishKey = buildRecipeSourceKey(meal.type, activeDish);
+        const isFavorite = favoriteSourceKeys.includes(activeDishKey);
 
         return (
           <div key={`${meal.type}-${mealIndex}`} style={{ marginBottom: mealIndex === result.meals.length - 1 ? 0 : "40px" }}>
@@ -81,6 +134,50 @@ export default function RecipeOutputPanel({ result, loading }: RecipeOutputPanel
                   </button>
                 );
               })}
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+                gap: "16px",
+                marginBottom: "24px",
+                padding: "18px 20px",
+                background: "#f8fafc",
+                borderRadius: "16px",
+                border: "1px solid #e2e8f0",
+              }}
+            >
+              <div>
+                <h3 style={{ fontSize: "1.35rem", fontWeight: "bold", color: "#1f2937", margin: "0 0 6px 0" }}>{activeDish.title}</h3>
+                <p style={{ margin: 0, fontSize: "0.92rem", color: "#6b7280" }}>
+                  Estimated cook time: {activeDish.estimatedCookTime ?? "25-30 minutes"}
+                </p>
+              </div>
+              <button
+                onClick={() => handleFavoriteToggle(meal.type, activeDish)}
+                disabled={!userId}
+                aria-label={isFavorite ? "Remove from favorites" : "Save to favorites"}
+                style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "50%",
+                  border: isFavorite ? "1px solid #fecaca" : "1px solid #e5e7eb",
+                  background: isFavorite ? "#fff1f2" : "white",
+                  cursor: userId ? "pointer" : "not-allowed",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  opacity: userId ? 1 : 0.5,
+                  flexShrink: 0,
+                }}
+                title={userId ? (isFavorite ? "Remove from favorites" : "Save to favorites") : "Sign in to save favorites"}
+              >
+                <svg width="22" height="22" viewBox="0 0 24 24" fill={isFavorite ? "#ef4444" : "none"} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M12 21s-6.7-4.35-9.33-8.02C.9 10.52 1.5 6.8 4.58 5.02c2.27-1.3 4.94-.64 6.42 1.05 1.48-1.69 4.15-2.35 6.42-1.05 3.08 1.78 3.68 5.5 1.91 7.96C18.7 16.65 12 21 12 21z" />
+                </svg>
+              </button>
             </div>
 
             <div style={{ marginBottom: "24px" }}>

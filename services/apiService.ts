@@ -56,6 +56,7 @@ export interface NutritionInfo {
 
 export interface Dish {
   title: string;
+  estimatedCookTime?: string;
   steps: string[];
   nutrition?: NutritionInfo;
 }

@@ -12,6 +12,7 @@ interface MealRequest {
 
 interface Dish {
   title: string;
+  estimatedCookTime?: string;
   steps: string[];
   nutrition?: {
     calories?: string;
@@ -60,6 +61,7 @@ function createFallbackDish(title: string, response: string): Dish {
 
   return {
     title,
+    estimatedCookTime: "25-30 minutes",
     steps: steps.length > 0 ? steps : ["Use the provided ingredients to prepare a practical meal."],
     nutrition: {
       calories: "Approximately 400 kcal",
@@ -84,6 +86,9 @@ function normalizeDish(rawDish: unknown, fallbackTitle: string): Dish {
     title: typeof candidate.title === "string" && candidate.title.trim().length > 0
       ? candidate.title.trim()
       : fallbackTitle,
+    estimatedCookTime: typeof candidate.estimatedCookTime === "string" && candidate.estimatedCookTime.trim().length > 0
+      ? candidate.estimatedCookTime.trim()
+      : "25-30 minutes",
     steps: rawSteps.length > 0 ? rawSteps : ["Prepare the ingredients and cook until the meal is ready to serve."],
     nutrition: candidate.nutrition && typeof candidate.nutrition === "object"
       ? (Object.fromEntries(
@@ -268,6 +273,7 @@ Respond with JSON only in this exact format:
       "dishes": [
         {
           "title": "Dish Name",
+          "estimatedCookTime": "25 minutes",
           "steps": ["Step 1", "Step 2", "Step 3"],
           "nutrition": {
             "calories": "XXX kcal",
