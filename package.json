@@ -5,6 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "dev:api": "node server.js",
+    "dev:all": "node server.js & next dev",
+    "dev:setup": "node db/setup.js",
     "build": "next build",
     "start": "next start",
     "start:api": "node server.js",

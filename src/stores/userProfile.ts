@@ -1,6 +1,9 @@
-import { defineStore } from "pinia";
+"use client";
 
-const STORAGE_KEY = "userProfile";
+import { useSnapChefAuth } from "../../components/auth/AuthProvider";
+import type { UserPreferencesRecord, FavoriteRecipeRecord } from "../../services/backendApi";
+
+export type { UserPreferencesRecord, FavoriteRecipeRecord };
 
 export interface UserProfile {
   age: number;
@@ -9,88 +12,41 @@ export interface UserProfile {
   medicalRestrictions: string[];
 }
 
-function getInitialProfile(): UserProfile {
-  if (typeof window === "undefined") {
-    return {
-      age: 0,
-      allergies: [],
-      religiousRestrictions: [],
-      medicalRestrictions: [],
-    };
-  }
+/**
+ * Global user state hook — wraps SnapChefAuthContext and exposes the
+ * Clerk identity, PostgreSQL UUID, preferences, and favorites in one place.
+ *
+ * Must be called inside a component that is a descendant of
+ * <SnapChefAuthProvider>.
+ */
+export function useUserProfile() {
+  const {
+    clerkUser,
+    userId,
+    preferences,
+    favorites,
+    isLoggedIn,
+    isGuest,
+    isSyncingUser,
+    isLoadingUserData,
+    syncError,
+    saveUserPreferences,
+    toggleFavoriteDish,
+    removeFavoriteRecipe,
+  } = useSnapChefAuth();
 
-  const saved = window.localStorage.getItem(STORAGE_KEY);
-  if (!saved) {
-    return {
-      age: 0,
-      allergies: [],
-      religiousRestrictions: [],
-      medicalRestrictions: [],
-    };
-  }
-
-  try {
-    const parsed = JSON.parse(saved);
-    return {
-      age: typeof parsed.age === "number" ? parsed.age : 0,
-      allergies: Array.isArray(parsed.allergies) ? parsed.allergies : [],
-      religiousRestrictions: Array.isArray(parsed.religiousRestrictions) ? parsed.religiousRestrictions : [],
-      medicalRestrictions: Array.isArray(parsed.medicalRestrictions) ? parsed.medicalRestrictions : [],
-    };
-  } catch (error) {
-    console.warn("Failed to parse userProfile from localStorage", error);
-    return {
-      age: 0,
-      allergies: [],
-      religiousRestrictions: [],
-      medicalRestrictions: [],
-    };
-  }
+  return {
+    clerkUser,
+    userId,
+    preferences,
+    favorites,
+    isLoggedIn,
+    isGuest,
+    isSyncingUser,
+    isLoadingUserData,
+    syncError,
+    savePreferences: saveUserPreferences,
+    toggleFavorite: toggleFavoriteDish,
+    removeFavorite: removeFavoriteRecipe,
+  };
 }
-
-export const useUserProfileStore = defineStore("userProfile", {
-  state: () => ({
-    userProfile: getInitialProfile(),
-  }),
-
-  actions: {
-    setAge(age: number) {
-      this.userProfile.age = age;
-      this.persist();
-    },
-
-    setAllergies(allergies: string[]) {
-      this.userProfile.allergies = allergies;
-      this.persist();
-    },
-
-    setReligiousRestrictions(religiousRestrictions: string[]) {
-      this.userProfile.religiousRestrictions = religiousRestrictions;
-      this.persist();
-    },
-
-    setMedicalRestrictions(medicalRestrictions: string[]) {
-      this.userProfile.medicalRestrictions = medicalRestrictions;
-      this.persist();
-    },
-
-    resetProfile() {
-      this.userProfile = {
-        age: 0,
-        allergies: [],
-        religiousRestrictions: [],
-        medicalRestrictions: [],
-      };
-      this.persist();
-    },
-
-    persist() {
-      if (typeof window === "undefined") return;
-      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(this.userProfile));
-    },
-
-    load() {
-      this.userProfile = getInitialProfile();
-    },
-  },
-});

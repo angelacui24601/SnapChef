@@ -1,12 +1,13 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSnapChefAuth } from "../components/auth/AuthProvider";
 import KitchenStatePanel from "../components/KitchenStatePanel";
 import RecipeOutputPanel from "../components/RecipeOutputPanel";
 import UserProfileSidebar from "../components/UserProfileSidebar";
+import PreferencesModal from "../components/PreferencesModal";
 import {
   generateRecipe,
   getErrorMessage,
@@ -29,17 +30,14 @@ export default function HomePage() {
     isSyncingUser,
     openAuthModal,
     preferences,
-    requireAuth,
     syncError,
-    userId,
   } = useSnapChefAuth();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
   const [result, setResult] = useState<GenerateRecipeResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showProfileMenu, setShowProfileMenu] = useState(false);
-  const profileMenuRef = useRef<HTMLDivElement>(null);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("kitchenState");
@@ -117,7 +115,7 @@ export default function HomePage() {
   };
 
   const handleProfileClick = () => {
-    if (isLoggedIn && userId) {
+    if (isLoggedIn) {
       router.push("/profile");
       return;
     }
@@ -163,15 +161,9 @@ export default function HomePage() {
             <div className="hidden rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 md:block">
               {isLoggedIn ? "Signed in" : isGuest ? "Guest mode" : "Sign in to save your recipes"}
             </div>
-            <div
-              ref={profileMenuRef}
-              style={{ position: "relative" }}
-              onMouseEnter={() => (isLoggedIn || isGuest) && setShowProfileMenu(true)}
-              onMouseLeave={() => setShowProfileMenu(false)}
-            >
-              <button
+            <button
                 onClick={handleProfileClick}
-                aria-label={isLoggedIn ? "Open profile" : "Open authentication"}
+                aria-label={isLoggedIn ? "Go to profile" : "Sign in"}
                 style={{
                   display: "flex",
                   alignItems: "center",
@@ -227,89 +219,16 @@ export default function HomePage() {
                       ? (clerkUser?.fullName ?? clerkUser?.email ?? (isSyncingUser ? "Syncing account..." : "Signed in"))
                       : isGuest
                         ? "Browsing without saving"
-                        : "Open auth options"}
+                        : "Sign in to save"}
                   </div>
                 </div>
               </button>
-
-              {/* Hover dropdown — only when logged in or guest */}
-              {showProfileMenu && (
-                <div
-                  style={{
-                    position: "absolute",
-                    top: "calc(100% + 8px)",
-                    right: 0,
-                    background: "white",
-                    border: "1px solid #e5e7eb",
-                    borderRadius: "14px",
-                    boxShadow: "0 8px 28px rgba(0, 0, 0, 0.12)",
-                    zIndex: 200,
-                    minWidth: "210px",
-                    overflow: "hidden",
-                  }}
-                >
-                  {isLoggedIn && clerkUser && (
-                    <div style={{ padding: "12px 14px 10px", borderBottom: "1px solid #f3f4f6" }}>
-                      <div style={{ fontSize: "0.8rem", fontWeight: 600, color: "#1f2937", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {clerkUser.fullName ?? clerkUser.email}
-                      </div>
-                      <div style={{ fontSize: "0.72rem", color: "#6b7280", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                        {clerkUser.email}
-                      </div>
-                    </div>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => { setShowProfileMenu(false); router.push("/profile"); }}
-                    style={{
-                      width: "100%",
-                      padding: "11px 14px",
-                      background: "none",
-                      border: "none",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "10px",
-                      fontSize: "0.875rem",
-                      color: "#374151",
-                      textAlign: "left",
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.background = "#f9fafb"; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.background = "none"; }}
-                  >
-                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#6b7280" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                    Profile &amp; Favorites
-                  </button>
-                </div>
-              )}
-            </div>
           </div>
         </div>
       </header>
 
       {/* Page content */}
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "28px 24px" }}>
-        {!isLoggedIn && (
-          <div className="mb-5 rounded-[20px] border border-slate-200 bg-white/85 px-5 py-4 shadow-sm backdrop-blur">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-sm font-semibold text-slate-900">Keep exploring without friction.</p>
-                <p className="text-sm text-slate-500">Sign in to save your recipes and preferences, or continue using SnapChef as a guest.</p>
-              </div>
-              <button
-                type="button"
-                onClick={openAuthModal}
-                className="rounded-full border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 transition hover:border-slate-300 hover:bg-slate-50"
-              >
-                Open auth options
-              </button>
-            </div>
-          </div>
-        )}
-
         {syncError && (
           <div className="mb-5 rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
             {syncError}
@@ -371,11 +290,13 @@ export default function HomePage() {
             <UserProfileSidebar
               isGuest={isGuest}
               isLoading={isLoadingUserData}
-              onEditProfile={() => requireAuth(() => router.push("/profile"))}
+              onEditProfile={() => setShowPreferencesModal(true)}
             />
           </div>
         </div>
       </div>
+
+      <PreferencesModal isOpen={showPreferencesModal} onClose={() => setShowPreferencesModal(false)} />
     </div>
   );
 }

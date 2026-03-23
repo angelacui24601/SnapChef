@@ -1,3 +1,5 @@
+// Load .env.local first (Next.js convention), then .env as fallback
+require("dotenv").config({ path: ".env.local" });
 require("dotenv").config();
 
 const express = require("express");

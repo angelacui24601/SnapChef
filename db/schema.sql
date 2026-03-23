@@ -2,24 +2,10 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
 CREATE TABLE IF NOT EXISTS users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  clerk_id TEXT UNIQUE,
+  clerk_id TEXT UNIQUE NOT NULL,
   email TEXT NOT NULL UNIQUE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
-
-ALTER TABLE users
-ADD COLUMN IF NOT EXISTS clerk_id TEXT;
-
-DO $$
-BEGIN
-  IF NOT EXISTS (
-    SELECT 1
-    FROM pg_constraint
-    WHERE conname = 'users_clerk_id_key'
-  ) THEN
-    ALTER TABLE users ADD CONSTRAINT users_clerk_id_key UNIQUE (clerk_id);
-  END IF;
-END $$;
 
 CREATE TABLE IF NOT EXISTS user_preferences (
   user_id UUID PRIMARY KEY REFERENCES users(id) ON DELETE CASCADE,
@@ -29,7 +15,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   custom_goal TEXT,
   allergies TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   medical TEXT,
-  religious TEXT,
+  religious TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   kitchen_tools TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[],
   kitchen_image TEXT,
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

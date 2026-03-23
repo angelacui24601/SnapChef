@@ -47,7 +47,7 @@ interface RawPreferenceResponse {
   custom_goal: string | null;
   allergies: string[] | null;
   medical: string | null;
-  religious: string | null;
+  religious: string[] | null;
   kitchen_tools: string[] | null;
   kitchen_image: string | null;
   updated_at?: string;
@@ -76,17 +76,6 @@ function normalizeTextArray(value: unknown): string[] {
   }
 
   return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
-}
-
-function normalizeReligiousValue(value: string | null | undefined) {
-  if (!value) {
-    return [];
-  }
-
-  return value
-    .split(",")
-    .map((entry) => entry.trim())
-    .filter(Boolean);
 }
 
 function formatCookTime(minutes: number | null | undefined) {
@@ -119,7 +108,7 @@ function mapPreferenceResponse(raw: RawPreferenceResponse): UserPreferencesRecor
     customGoal: raw.custom_goal ?? "",
     allergies: normalizeTextArray(raw.allergies),
     medical: raw.medical ?? "",
-    religious: normalizeReligiousValue(raw.religious),
+    religious: normalizeTextArray(raw.religious),
     kitchenTools: normalizeTextArray(raw.kitchen_tools),
     kitchenImage: raw.kitchen_image ?? null,
     updatedAt: raw.updated_at,
@@ -210,7 +199,7 @@ export async function savePreferences(userId: string, preferences: UserPreferenc
       customGoal: preferences.customGoal || null,
       allergies: preferences.allergies,
       medical: preferences.medical || null,
-      religious: preferences.religious.join(", ") || null,
+      religious: preferences.religious,
       kitchenTools: preferences.kitchenTools,
       kitchenImage: preferences.kitchenImage,
     }),

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSnapChefAuth } from "../../components/auth/AuthProvider";
@@ -86,11 +86,12 @@ function toPreferenceRecord(profile: OnboardingProfile): UserPreferencesRecord {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isLoadingUserData, preferences, saveUserPreferences, setGuestPreferences, syncError } = useSnapChefAuth();
+  const { isGuest, isLoadingUserData, isLoggedIn, openAuthModal, preferences, saveUserPreferences, setGuestPreferences, syncError } = useSnapChefAuth();
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<OnboardingProfile>(EMPTY_PROFILE);
   const [submitError, setSubmitError] = useState("");
   const [isSaving, setIsSaving] = useState(false);
+  const [awaitingAuth, setAwaitingAuth] = useState(false);
 
   useEffect(() => {
     if (!isLoadingUserData) {
@@ -108,7 +109,7 @@ export default function OnboardingPage() {
     setProfile((prev) => ({ ...prev, ...fields }));
   };
 
-  const handleFinish = async () => {
+  const performSave = useCallback(async () => {
     setIsSaving(true);
     setSubmitError("");
 
@@ -123,6 +124,25 @@ export default function OnboardingPage() {
     } finally {
       setIsSaving(false);
     }
+  }, [profile, saveUserPreferences, setGuestPreferences, router]);
+
+  // When the user authenticates (or continues as guest) after we showed the
+  // auth modal from the final onboarding step, complete the save.
+  useEffect(() => {
+    if (awaitingAuth && (isLoggedIn || isGuest)) {
+      setAwaitingAuth(false);
+      void performSave();
+    }
+  }, [awaitingAuth, isLoggedIn, isGuest, performSave]);
+
+  const handleFinish = () => {
+    if (!isLoggedIn && !isGuest) {
+      setAwaitingAuth(true);
+      openAuthModal();
+      return;
+    }
+
+    void performSave();
   };
 
   const goTo = (n: number) => setStep(n);
@@ -188,9 +208,9 @@ export default function OnboardingPage() {
             <StepKitchenSetup
               profile={profile}
               update={update}
-              onNext={() => void handleFinish()}
+              onNext={() => handleFinish()}
               onBack={() => goTo(2)}
-              onSkip={() => void handleFinish()}
+              onSkip={() => handleFinish()}
               isSaving={isSaving}
             />
           )}

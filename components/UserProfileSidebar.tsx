@@ -25,9 +25,13 @@ export default function UserProfileSidebar({ isGuest = false, isLoading = false,
   const hasProfileData = Boolean(
     preferences && (
       preferences.age > 0 ||
+      preferences.sex.trim().length > 0 ||
+      preferences.goal.trim().length > 0 ||
+      preferences.customGoal.trim().length > 0 ||
       preferences.allergies.length > 0 ||
       preferences.religious.length > 0 ||
-      preferences.medical.trim().length > 0
+      preferences.medical.trim().length > 0 ||
+      preferences.kitchenTools.length > 0
     ),
   );
 
@@ -134,6 +138,32 @@ export default function UserProfileSidebar({ isGuest = false, isLoading = false,
             </div>
           )}
 
+          {/* Sex */}
+          {preferences && preferences.sex.trim().length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                Sex
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#374151' }}>
+                {preferences.sex}
+              </div>
+            </div>
+          )}
+
+          {/* Goal */}
+          {preferences && preferences.goal.trim().length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280', marginBottom: '4px' }}>
+                Goal
+              </div>
+              <div style={{ fontSize: '0.9rem', color: '#374151' }}>
+                {preferences.goal === 'custom' && preferences.customGoal.trim().length > 0
+                  ? preferences.customGoal
+                  : preferences.goal}
+              </div>
+            </div>
+          )}
+
           {/* Allergies */}
           {preferences && preferences.allergies.length > 0 && (
             <div>
@@ -202,6 +232,32 @@ export default function UserProfileSidebar({ isGuest = false, isLoading = false,
                 >
                   {preferences.medical}
                 </span>
+              </div>
+            </div>
+          )}
+
+          {/* Kitchen Tools */}
+          {preferences && preferences.kitchenTools.length > 0 && (
+            <div>
+              <div style={{ fontSize: '0.8rem', fontWeight: '600', color: '#6b7280', marginBottom: '6px' }}>
+                Kitchen Tools
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {preferences.kitchenTools.map((tool, index) => (
+                  <span
+                    key={`${tool}-${index}`}
+                    style={{
+                      fontSize: '0.75rem',
+                      background: '#f0fdf4',
+                      color: '#166534',
+                      padding: '4px 8px',
+                      borderRadius: '999px',
+                      border: '1px solid #bbf7d0'
+                    }}
+                  >
+                    {tool}
+                  </span>
+                ))}
               </div>
             </div>
           )}

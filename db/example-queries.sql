@@ -25,7 +25,7 @@ VALUES (
   NULL,
   ARRAY['peanuts', 'shellfish'],
   'low sodium',
-  'halal',
+  ARRAY['halal'],
   ARRAY['oven', 'air fryer'],
   'https://cdn.example.com/kitchen.jpg',
   NOW()

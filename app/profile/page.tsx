@@ -25,6 +25,7 @@ export default function ProfilePage() {
     favorites,
     isGuest,
     isLoadingUserData,
+    isLoggedIn,
     openAuthModal,
     preferences,
     removeFavoriteRecipe,
@@ -36,6 +37,14 @@ export default function ProfilePage() {
     userId,
   } = useSnapChefAuth();
   const [draftPreferences, setDraftPreferences] = useState<UserPreferencesRecord>(EMPTY_PREFERENCES);
+
+  // Redirect unauthenticated, non-guest visitors back to home and open the sign-in modal
+  useEffect(() => {
+    if (!isLoadingUserData && !isLoggedIn && !isGuest) {
+      router.replace("/");
+      openAuthModal();
+    }
+  }, [isLoadingUserData, isLoggedIn, isGuest, router, openAuthModal]);
   const [draftFavorites, setDraftFavorites] = useState<FavoriteRecipeRecord[]>([]);
   const [newAllergy, setNewAllergy] = useState("");
   const [newReligiousRestriction, setNewReligiousRestriction] = useState("");
@@ -161,48 +170,9 @@ export default function ProfilePage() {
     router.push("/");
   };
 
-  if (!clerkUser && !isGuest) {
-    return (
-      <div className="min-h-screen bg-[linear-gradient(135deg,#f8fafc_0%,#f1f5f9_100%)] px-5 py-12">
-        <div className="mx-auto max-w-xl rounded-[28px] border border-white/70 bg-white p-8 shadow-[0_20px_60px_rgba(15,23,42,0.08)]">
-          <div className="mb-6 flex items-center gap-3">
-            <Image
-              src="/snapchef-logo.png"
-              alt="SnapChef logo"
-              width={42}
-              height={42}
-              className="rounded-xl object-cover"
-              priority
-            />
-            <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Save your SnapChef profile</h1>
-              <p className="text-sm text-slate-500">Profile editing stays available after you sign in or explicitly continue as guest.</p>
-            </div>
-          </div>
-
-          <div className="rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600">
-            Signing in keeps favorites and preferences attached to your account. Guest mode lets you explore, but nothing is stored across devices.
-          </div>
-
-          <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-            <button
-              type="button"
-              onClick={openAuthModal}
-              className="flex-1 rounded-2xl bg-emerald-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-emerald-600"
-            >
-              Sign in to continue
-            </button>
-            <button
-              type="button"
-              onClick={() => router.push("/")}
-              className="flex-1 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-            >
-              Back to home
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+  if (!isLoggedIn && !isGuest) {
+    // Redirect is in-progress via useEffect above — render nothing
+    return null;
   }
 
   if (isLoadingUserData) {

@@ -19,7 +19,7 @@ async function savePreferences(req, res) {
     customGoal = null,
     allergies = [],
     medical = null,
-    religious = null,
+    religious = [],
     kitchenTools = [],
     kitchenImage = null,
   } = req.body;
@@ -44,7 +44,7 @@ async function savePreferences(req, res) {
           kitchen_image,
           updated_at
         )
-        VALUES ($1::uuid, $2, $3, $4, $5, $6::text[], $7, $8, $9::text[], $10, NOW())
+        VALUES ($1::uuid, $2, $3, $4, $5, $6::text[], $7, $8::text[], $9::text[], $10, NOW())
         ON CONFLICT (user_id) DO UPDATE SET
           age = EXCLUDED.age,
           sex = EXCLUDED.sex,
@@ -66,7 +66,7 @@ async function savePreferences(req, res) {
         customGoal,
         normalizeTextArray(allergies),
         medical,
-        religious,
+        normalizeTextArray(religious),
         normalizeTextArray(kitchenTools),
         kitchenImage,
       ],

@@ -17,6 +17,7 @@ import {
 } from "../../services/backendApi";
 import { buildRecipeSourceKey } from "../../services/favorites";
 import AuthModal from "./AuthModal";
+import { PENDING_PREFS_KEY } from "../PreferencesModal";
 
 interface ClerkUserSnapshot {
   id: string;
@@ -129,6 +130,21 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
 
         setUserId(syncedUser.id);
         await hydrateUserData(syncedUser.id);
+
+        // Apply preferences saved to sessionStorage before an OAuth redirect
+        if (!cancelled) {
+          const pendingJson = sessionStorage.getItem(PENDING_PREFS_KEY);
+          if (pendingJson) {
+            try {
+              sessionStorage.removeItem(PENDING_PREFS_KEY);
+              const pendingPrefs = JSON.parse(pendingJson) as UserPreferencesRecord;
+              const saved = await savePreferencesRequest(syncedUser.id, pendingPrefs);
+              if (!cancelled) setPreferences(saved);
+            } catch {
+              // non-critical — user can resave manually
+            }
+          }
+        }
       } catch (error) {
         if (!cancelled) {
           console.error("Failed to sync Clerk user with PostgreSQL", error);
@@ -164,10 +180,6 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       return;
     }
 
-    if (isLoggedIn && !userId) {
-      return;
-    }
-
     void action();
   };
 
@@ -176,13 +188,9 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const saveUserPreferences = async (nextPreferences: UserPreferencesRecord) => {
-    if (!isLoggedIn || isGuest) {
+    if (!isLoggedIn || isGuest || !userId) {
       setPreferences(nextPreferences);
       return;
-    }
-
-    if (!userId) {
-      throw new Error("User sync is still in progress.");
     }
 
     const savedPreferences = await savePreferencesRequest(userId, nextPreferences);
@@ -196,7 +204,7 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       steps: recipe.steps,
     });
 
-    if (!isLoggedIn || isGuest) {
+    if (!isLoggedIn || isGuest || !userId) {
       const guestFavorite: FavoriteRecipeRecord = {
         id: recipe.recipeId ?? sourceKey,
         recipeId: recipe.recipeId ?? sourceKey,
@@ -213,23 +221,15 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       return guestFavorite;
     }
 
-    if (!userId) {
-      throw new Error("User sync is still in progress.");
-    }
-
     const savedFavorite = await saveFavorite(userId, recipe);
     setFavorites((current) => [savedFavorite, ...current.filter((entry) => entry.recipeId !== savedFavorite.recipeId)]);
     return savedFavorite;
   };
 
   const removeFavoriteRecipe = async (recipeId: string) => {
-    if (!isLoggedIn || isGuest) {
+    if (!isLoggedIn || isGuest || !userId) {
       setFavorites((current) => current.filter((entry) => entry.recipeId !== recipeId));
       return;
-    }
-
-    if (!userId) {
-      throw new Error("User sync is still in progress.");
     }
 
     await deleteFavorite(userId, recipeId);

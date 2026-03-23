@@ -12,6 +12,12 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Backend Node.js files use CommonJS require() — exclude from TS rules
+    "server.js",
+    "db/**",
+    "routes/**",
+    "controllers/**",
+    "proxy.ts",
   ]),
 ]);
 

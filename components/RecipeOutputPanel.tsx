@@ -18,6 +18,7 @@ function titleCase(value: string): string {
 export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOutputPanelProps) {
   const { favorites, isLoggedIn, isSyncingUser, requireAuth, toggleFavoriteDish, userId } = useSnapChefAuth();
   const [selectedTabs, setSelectedTabs] = useState<Record<number, number>>({});
+  const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
   const favoriteSourceKeys = favorites.map((favorite) => favorite.sourceKey);
 
   const handleTabChange = (mealIndex: number, dishIndex: number) => {
@@ -29,8 +30,18 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
   };
 
   const handleFavoriteToggle = (dish: Dish) => {
+    const sourceKey = buildRecipeSourceKey(dish);
     requireAuth(async () => {
-      await toggleFavoriteDish(dish);
+      setPendingKeys((prev) => new Set([...prev, sourceKey]));
+      try {
+        await toggleFavoriteDish(dish);
+      } finally {
+        setPendingKeys((prev) => {
+          const next = new Set(prev);
+          next.delete(sourceKey);
+          return next;
+        });
+      }
     });
   };
 
@@ -60,7 +71,11 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
         const activeDishIndex = Math.min(selectedTabs[mealIndex] ?? 0, meal.dishes.length - 1);
         const activeDish = meal.dishes[activeDishIndex];
         const activeDishKey = buildRecipeSourceKey(activeDish);
-        const isFavorite = favoriteSourceKeys.includes(activeDishKey);
+        const isPending = pendingKeys.has(activeDishKey);
+        // Optimistic: flip the visual state immediately while the network call is in flight
+        const isFavorite = isPending
+          ? !favoriteSourceKeys.includes(activeDishKey)
+          : favoriteSourceKeys.includes(activeDishKey);
 
         return (
           <div key={`${meal.type}-${mealIndex}`} style={{ marginBottom: mealIndex === result.meals.length - 1 ? 0 : "40px" }}>
