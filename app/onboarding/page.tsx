@@ -83,7 +83,8 @@ export default function OnboardingPage() {
 
   const handleFinish = () => {
     saveProfile();
-    router.push("/");
+    // router.push is skipped here — OAuth will navigate away;
+    // on return, useEffect detects saved profile and routes to /
   };
 
   const goTo = (n: number) => setStep(n);

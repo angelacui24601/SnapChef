@@ -17,6 +17,7 @@ export default function StepAuth({ onBack, onFinish }: Props) {
 
   const handleGoogle = async () => {
     if (isBusy) return;
+    onFinish(); // saves profile to localStorage before leaving
     await signIn.sso({
       strategy: "oauth_google",
       redirectUrl: "/sso-callback",
@@ -26,6 +27,7 @@ export default function StepAuth({ onBack, onFinish }: Props) {
 
   const handleApple = async () => {
     if (isBusy) return;
+    onFinish(); // saves profile to localStorage before leaving
     await signIn.sso({
       strategy: "oauth_apple",
       redirectUrl: "/sso-callback",
@@ -34,7 +36,7 @@ export default function StepAuth({ onBack, onFinish }: Props) {
   };
 
   const handleEmail = () => {
-    // Redirect to Clerk's hosted sign-up page for email/password flow
+    onFinish(); // saves profile to localStorage before leaving
     clerk.redirectToSignUp({ redirectUrl: "/" });
   };
 
