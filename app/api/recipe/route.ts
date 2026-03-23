@@ -31,6 +31,7 @@ interface RecipeResponse {
 
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
+  console.log("[recipe] OPENAI_API_KEY present:", Boolean(apiKey), "env:", process.env.VERCEL_ENV ?? "local");
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured");
   }

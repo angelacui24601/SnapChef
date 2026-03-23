@@ -3,6 +3,7 @@ import OpenAI from "openai";
 
 function getOpenAIClient() {
   const apiKey = process.env.OPENAI_API_KEY;
+  console.log("[detect-ingredients] OPENAI_API_KEY present:", Boolean(apiKey), "env:", process.env.VERCEL_ENV ?? "local");
   if (!apiKey) {
     throw new Error("OPENAI_API_KEY is not configured");
   }
@@ -107,7 +108,9 @@ export async function POST(req: Request) {
   } catch (error) {
     console.error("Error detecting ingredients:", error);
     return NextResponse.json(
-      { error: "Failed to detect ingredients" },
+      {
+        error: error instanceof Error ? error.message : "Failed to detect ingredients",
+      },
       { status: 500 }
     );
   }
