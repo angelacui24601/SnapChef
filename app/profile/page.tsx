@@ -98,45 +98,21 @@ export default function ProfilePage() {
         animation: 'fadeInUp 0.6s ease-out'
       }}>
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '32px' }}>
-          <div style={{
-            width: '80px',
-            height: '80px',
-            background: 'white',
-            borderRadius: '24px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            margin: '0 auto 20px',
-            boxShadow: '0 8px 32px rgba(34, 197, 94, 0.2)',
-            overflow: 'hidden'
-          }}>
+        <div style={{ marginBottom: '28px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px', marginBottom: '6px' }}>
             <Image
               src="/snapchef-logo.png"
               alt="SnapChef logo"
-              width={80}
-              height={80}
-              style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+              width={44}
+              height={44}
+              style={{ borderRadius: '12px', objectFit: 'cover', flexShrink: 0 }}
               priority
             />
+            <h1 style={{ fontSize: '1.6rem', fontWeight: 700, color: '#1f2937', margin: 0 }}>
+              Edit Profile
+            </h1>
           </div>
-          <h1 style={{
-            fontSize: '2.5rem',
-            fontWeight: 'bold',
-            color: '#1f2937',
-            marginBottom: '8px',
-            background: 'linear-gradient(135deg, #22c55e, #16a34a)',
-            WebkitBackgroundClip: 'text',
-            WebkitTextFillColor: 'transparent',
-            backgroundClip: 'text'
-          }}>
-            Edit Profile
-          </h1>
-          <p style={{
-            fontSize: '1.1rem',
-            color: '#6b7280',
-            marginBottom: '0'
-          }}>
+          <p style={{ color: '#6b7280', margin: 0, fontSize: '0.9rem' }}>
             Update your dietary preferences and restrictions
           </p>
         </div>

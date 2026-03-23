@@ -128,118 +128,67 @@ export default function HomePage() {
   };
 
   return (
-    <div
-      style={{
-        minHeight: "100vh",
-        background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-        position: "relative",
-        overflow: "hidden",
-      }}
-    >
-      <div
+    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+      {/* Sticky top navbar */}
+      <header
         style={{
-          position: "absolute",
-          top: "10%",
-          left: "10%",
-          width: "200px",
-          height: "200px",
-          background: "rgba(34, 197, 94, 0.05)",
-          borderRadius: "50%",
-          filter: "blur(40px)",
-          zIndex: 0,
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          bottom: "20%",
-          right: "15%",
-          width: "150px",
-          height: "150px",
-          background: "rgba(249, 115, 22, 0.05)",
-          borderRadius: "50%",
-          filter: "blur(30px)",
-          zIndex: 0,
-        }}
-      />
-
-      <div
-        style={{
-          maxWidth: "1400px",
-          margin: "0 auto",
-          padding: "40px 20px",
-          position: "relative",
-          zIndex: 1,
+          position: "sticky",
+          top: 0,
+          zIndex: 50,
+          background: "white",
+          borderBottom: "1px solid #e5e7eb",
+          padding: "0 24px",
         }}
       >
-        <div style={{ textAlign: "center", marginBottom: "40px", animation: "fadeInUp 0.6s ease-out" }}>
-          <div
-            style={{
-              width: "80px",
-              height: "80px",
-              background: "white",
-              borderRadius: "24px",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              margin: "0 auto 20px",
-              boxShadow: "0 8px 32px rgba(34, 197, 94, 0.2)",
-              overflow: "hidden",
-            }}
-          >
+        <div
+          style={{
+            maxWidth: "1400px",
+            margin: "0 auto",
+            height: "60px",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
             <Image
               src="/snapchef-logo.png"
               alt="SnapChef logo"
-              width={80}
-              height={80}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              width={40}
+              height={40}
+              style={{ borderRadius: "10px", objectFit: "cover" }}
               priority
             />
+            <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
           </div>
-          <h1
-            style={{
-              fontSize: "2.5rem",
-              fontWeight: "bold",
-              color: "#1f2937",
-              marginBottom: "8px",
-              background: "linear-gradient(135deg, #22c55e, #16a34a)",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              backgroundClip: "text",
-            }}
-          >
-            SnapChef AI
-          </h1>
-          <p style={{ fontSize: "1.1rem", color: "#6b7280", marginBottom: 0 }}>
-            Transform your ingredients into meal plans with AI-powered recipe generation
-          </p>
+          <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>
         </div>
+      </header>
 
+      {/* Page content */}
+      <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "28px 24px" }}>
         {error && (
           <div
             style={{
-              marginBottom: "32px",
-              padding: "16px 20px",
-              background: "rgba(239, 68, 68, 0.1)",
+              marginBottom: "20px",
+              padding: "12px 16px",
+              background: "rgba(239, 68, 68, 0.08)",
               border: "1px solid rgba(239, 68, 68, 0.2)",
-              borderRadius: "16px",
+              borderRadius: "12px",
             }}
           >
-            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#dc2626" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <circle cx="12" cy="12" r="10" />
                 <line x1="12" y1="8" x2="12" y2="12" />
                 <line x1="12" y1="16" x2="12.01" y2="16" />
               </svg>
-              <div>
-                <h3 style={{ fontWeight: 600, color: "#dc2626", margin: "0 0 4px 0" }}>Error</h3>
-                <p style={{ color: "#dc2626", margin: 0, fontSize: "0.9rem" }}>{error}</p>
-              </div>
+              <p style={{ color: "#dc2626", margin: 0, fontSize: "0.875rem", flex: 1 }}>{error}</p>
               <button
                 onClick={() => setError("")}
-                style={{ marginLeft: "auto", color: "#dc2626", background: "none", border: "none", cursor: "pointer", padding: "4px" }}
+                style={{ color: "#dc2626", background: "none", border: "none", cursor: "pointer", padding: "2px" }}
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <line x1="18" y1="6" x2="6" y2="18" />
                   <line x1="6" y1="6" x2="18" y2="18" />
                 </svg>
@@ -248,9 +197,9 @@ export default function HomePage() {
           </div>
         )}
 
-        <div style={{ display: "flex", gap: "32px", alignItems: "flex-start" }}>
-          <div style={{ flex: "1 1 70%", minWidth: 0 }}>
-            <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
+        <div style={{ display: "flex", gap: "24px", alignItems: "flex-start" }}>
+          <div style={{ flex: "1 1 0", minWidth: 0 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
               <KitchenStatePanel
                 ingredients={ingredients}
                 setIngredients={setIngredients}
@@ -265,7 +214,7 @@ export default function HomePage() {
             </div>
           </div>
 
-          <div style={{ flex: "0 0 300px" }}>
+          <div style={{ flex: "0 0 280px" }}>
             <UserProfileSidebar />
           </div>
         </div>
