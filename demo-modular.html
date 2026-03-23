@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SnapChef AI - Modular Vue Components Demo</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+</head>
+<body class="bg-gray-50">
+  <div id="app">
+    <Home />
+  </div>
+
+  <script type="module">
+    // Import all components
+    import Home from '../components/Home.vue'
+    import ImageUploader from '../components/ImageUploader.vue'
+    import IngredientInput from '../components/IngredientInput.vue'
+    import ConstraintsPanel from '../components/ConstraintsPanel.vue'
+    import ModeSelector from '../components/ModeSelector.vue'
+    import LoadingAnimation from '../components/LoadingAnimation.vue'
+    import RecipeResult from '../components/RecipeResult.vue'
+
+    const app = Vue.createApp({
+      components: {
+        Home,
+        ImageUploader,
+        IngredientInput,
+        ConstraintsPanel,
+        ModeSelector,
+        LoadingAnimation,
+        RecipeResult
+      }
+    })
+
+    app.mount('#app')
+  </script>
+</body>
+</html>
