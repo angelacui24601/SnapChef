@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { useUser, useClerk } from "@clerk/nextjs";
+import { UserButton, useAuth, useUser } from "@clerk/nextjs";
 import KitchenStatePanel from "../components/KitchenStatePanel";
 import RecipeOutputPanel from "../components/RecipeOutputPanel";
 import UserProfileSidebar from "../components/UserProfileSidebar";
@@ -21,8 +21,8 @@ interface Ingredient {
 
 export default function HomePage() {
   const router = useRouter();
-  const { user, isLoaded: userLoaded } = useUser();
-  const { signOut } = useClerk();
+  const { isLoaded: authLoaded, isSignedIn, userId } = useAuth();
+  const { user } = useUser();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
   const [result, setResult] = useState<GenerateRecipeResponse | null>(null);
@@ -165,26 +165,69 @@ export default function HomePage() {
             <span style={{ fontSize: "1.2rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
           </div>
           <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-            {userLoaded && user ? (
+            {authLoaded && isSignedIn ? (
               <>
-                <span style={{ fontSize: "0.8rem", color: "#6b7280" }}>
-                  {user.primaryEmailAddress?.emailAddress ?? user.fullName}
-                </span>
                 <button
-                  onClick={() => signOut({ redirectUrl: "/onboarding" })}
+                  onClick={() => router.push("/profile")}
                   style={{
-                    fontSize: "0.8rem",
-                    fontWeight: 600,
-                    color: "#6b7280",
-                    background: "#f3f4f6",
-                    border: "none",
-                    borderRadius: "8px",
-                    padding: "6px 12px",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "10px",
+                    background: "#f8fafc",
+                    border: "1px solid #e5e7eb",
+                    borderRadius: "999px",
+                    padding: "6px 12px 6px 8px",
                     cursor: "pointer",
                   }}
                 >
-                  Sign out
+                  {user?.imageUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={user.imageUrl}
+                      alt="Profile"
+                      width={30}
+                      height={30}
+                      style={{ borderRadius: "50%", flexShrink: 0 }}
+                    />
+                  ) : (
+                    <div
+                      style={{
+                        width: "30px",
+                        height: "30px",
+                        borderRadius: "50%",
+                        background: "linear-gradient(135deg, #22c55e, #16a34a)",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "white",
+                        fontSize: "0.8rem",
+                        fontWeight: 700,
+                      }}
+                    >
+                      {(user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "?")[0].toUpperCase()}
+                    </div>
+                  )}
+                  <div style={{ textAlign: "left" }}>
+                    <div style={{ fontSize: "0.8rem", fontWeight: 700, color: "#1f2937" }}>Profile</div>
+                    <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                      {user?.fullName ?? user?.primaryEmailAddress?.emailAddress ?? "Account"}
+                    </div>
+                  </div>
                 </button>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    width: "40px",
+                    height: "40px",
+                    borderRadius: "999px",
+                    border: "1px solid #e5e7eb",
+                    background: "white",
+                  }}
+                >
+                  <UserButton />
+                </div>
               </>
             ) : (
               <span style={{ fontSize: "0.875rem", color: "#9ca3af" }}>AI-powered meal planning</span>
@@ -238,7 +281,7 @@ export default function HomePage() {
                 error={error}
                 setError={setError}
               />
-              <RecipeOutputPanel result={result} loading={loading} />
+              <RecipeOutputPanel result={result} loading={loading} userId={authLoaded && isSignedIn ? userId ?? null : null} />
             </div>
           </div>
 
