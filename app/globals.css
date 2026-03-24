@@ -1,8 +1,21 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* SnapChef design tokens — warm daily-life palette */
+  --sc-bg:            #f7f5f1;   /* warm linen page background          */
+  --sc-nav:           #fffefb;   /* navbar — barely-off-white with warmth */
+  --sc-nav-border:    #ede9e1;   /* subtle warm separator               */
+  --sc-card:          #ffffff;
+  --sc-card-shadow:   0 2px 16px rgba(90, 60, 10, 0.07);
+  --sc-card-border:   #ede9e1;
+  --sc-green:         #22c55e;
+  --sc-green-dark:    #16a34a;
+  --sc-green-light:   #f0fdf4;
+  --sc-text-primary:  #1c1917;   /* warm near-black                     */
+  --sc-text-muted:    #78716c;   /* warm grey                           */
+
+  --background: var(--sc-bg);
+  --foreground: var(--sc-text-primary);
 }
 
 @theme inline {
@@ -12,17 +25,11 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--sc-bg);
+  color: var(--sc-text-primary);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
 }
 
 @keyframes fadeInUp {

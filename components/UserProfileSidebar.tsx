@@ -38,11 +38,11 @@ export default function UserProfileSidebar({ isLoading = false, onEditProfile }:
     <div style={{
       width: '100%',
       maxWidth: '320px',
-      background: 'white',
+      background: 'var(--sc-card, #ffffff)',
       borderRadius: '24px',
       padding: '24px',
-      boxShadow: '0 4px 24px rgba(0, 0, 0, 0.06)',
-      border: '1px solid rgba(255, 255, 255, 0.8)',
+      boxShadow: 'var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))',
+      border: '1px solid var(--sc-card-border, #ede9e1)',
       height: 'fit-content',
       position: 'sticky',
       top: '20px'

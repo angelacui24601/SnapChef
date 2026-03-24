@@ -128,15 +128,15 @@ export default function HomePage() {
   };
 
   return (
-    <div style={{ minHeight: "100vh", background: "#f8fafc" }}>
+    <div style={{ minHeight: "100vh", background: "var(--sc-bg, #f7f5f1)" }}>
       {/* Sticky top navbar */}
       <header
         style={{
           position: "sticky",
           top: 0,
           zIndex: 50,
-          background: "white",
-          borderBottom: "1px solid #e5e7eb",
+          background: "var(--sc-nav, #fffefb)",
+          borderBottom: "1px solid var(--sc-nav-border, #ede9e1)",
           padding: "0 24px",
         }}
       >
@@ -172,15 +172,15 @@ export default function HomePage() {
                   display: "flex",
                   alignItems: "center",
                   gap: "10px",
-                  background: "#f8fafc",
-                  border: "1px solid #e5e7eb",
+                  background: "var(--sc-bg, #f7f5f1)",
+                  border: "1px solid var(--sc-nav-border, #ede9e1)",
                   borderRadius: "999px",
                   padding: "6px 12px 6px 8px",
                   cursor: "pointer",
                   transition: "background 0.15s, border-color 0.15s",
                 }}
-                onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
-                onMouseLeave={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#efe9de"; e.currentTarget.style.borderColor = "#d4c9b8"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "var(--sc-bg, #f7f5f1)"; e.currentTarget.style.borderColor = "var(--sc-nav-border, #ede9e1)"; }}
               >
                 {isLoggedIn && clerkUser?.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element

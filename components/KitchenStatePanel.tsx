@@ -176,11 +176,11 @@ export default function KitchenStatePanel({
     <div style={{ display: "flex", flexDirection: "column", gap: "32px" }}>
       <div
         style={{
-          background: "white",
+          background: "var(--sc-card, #ffffff)",
           borderRadius: "24px",
           padding: "32px",
-          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)",
-          border: "1px solid rgba(255, 255, 255, 0.8)",
+          boxShadow: "var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))",
+          border: "1px solid var(--sc-card-border, #ede9e1)",
           animation: "fadeInUp 0.8s ease-out 0.2s both",
         }}
       >
@@ -388,11 +388,11 @@ export default function KitchenStatePanel({
 
       <div
         style={{
-          background: "white",
+          background: "var(--sc-card, #ffffff)",
           borderRadius: "24px",
           padding: "32px",
-          boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)",
-          border: "1px solid rgba(255, 255, 255, 0.8)",
+          boxShadow: "var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))",
+          border: "1px solid var(--sc-card-border, #ede9e1)",
           animation: "fadeInUp 0.8s ease-out 0.4s both",
         }}
       >

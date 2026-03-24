@@ -47,8 +47,8 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
 
   if (loading) {
     return (
-      <div style={{ background: "white", borderRadius: "24px", padding: "48px", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)", border: "1px solid rgba(255, 255, 255, 0.8)", textAlign: "center" }}>
-        <h3 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", margin: "0 0 16px 0" }}>Crafting Your Meal Plan</h3>
+      <div style={{ background: "var(--sc-card, #ffffff)", borderRadius: "24px", padding: "48px", boxShadow: "var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))", border: "1px solid var(--sc-card-border, #ede9e1)", textAlign: "center" }}>
+        <h3 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1c1917", margin: "0 0 16px 0" }}>Crafting Your Meal Plan</h3>
         <p style={{ color: "#6b7280", margin: 0, fontSize: "1rem" }}>AI is splitting your ingredients across the requested meals.</p>
       </div>
     );
@@ -56,8 +56,8 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
 
   if (!result || result.meals.length === 0) {
     return (
-      <div style={{ background: "white", borderRadius: "24px", padding: "48px", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)", border: "1px solid rgba(255, 255, 255, 0.8)", textAlign: "center" }}>
-        <h3 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1f2937", margin: "0 0 16px 0" }}>Your Recipes Will Appear Here</h3>
+      <div style={{ background: "var(--sc-card, #ffffff)", borderRadius: "24px", padding: "48px", boxShadow: "var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))", border: "1px solid var(--sc-card-border, #ede9e1)", textAlign: "center" }}>
+        <h3 style={{ fontSize: "1.5rem", fontWeight: "bold", color: "#1c1917", margin: "0 0 16px 0" }}>Your Recipes Will Appear Here</h3>
         <p style={{ color: "#6b7280", margin: "0 auto", fontSize: "1rem", maxWidth: "420px" }}>
           Add ingredients, define one or more meals, and generate recipes for breakfast, lunch, dinner, or snack.
         </p>
@@ -66,7 +66,7 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
   }
 
   return (
-    <div style={{ background: "white", borderRadius: "24px", padding: "32px", boxShadow: "0 4px 24px rgba(0, 0, 0, 0.06)", border: "1px solid rgba(255, 255, 255, 0.8)" }}>
+    <div style={{ background: "var(--sc-card, #ffffff)", borderRadius: "24px", padding: "32px", boxShadow: "var(--sc-card-shadow, 0 2px 16px rgba(90, 60, 10, 0.07))", border: "1px solid var(--sc-card-border, #ede9e1)" }}>
       {result.meals.map((meal, mealIndex) => {
         const activeDishIndex = Math.min(selectedTabs[mealIndex] ?? 0, meal.dishes.length - 1);
         const activeDish = meal.dishes[activeDishIndex];
