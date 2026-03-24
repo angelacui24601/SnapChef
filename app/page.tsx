@@ -171,7 +171,10 @@ export default function HomePage() {
                   borderRadius: "999px",
                   padding: "6px 12px 6px 8px",
                   cursor: "pointer",
+                  transition: "background 0.15s, border-color 0.15s",
                 }}
+                onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
+                onMouseLeave={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
               >
                 {isLoggedIn && clerkUser?.imageUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element

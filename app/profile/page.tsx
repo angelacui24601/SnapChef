@@ -273,12 +273,35 @@ export default function ProfilePage() {
   return (
     <div style={{ minHeight: "100vh", background: "linear-gradient(135deg, #f8fafc 0%, #ecfdf5 100%)" }}>
 
+      {/* ── TOP NAVBAR ── */}
+      <header style={{ position: "sticky", top: 0, zIndex: 50, background: "white", borderBottom: "1px solid #e5e7eb", padding: "0 24px" }}>
+        <div style={{ maxWidth: "1100px", margin: "0 auto", height: "60px", display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+          {/* Brand logo — mirrors the main page navbar */}
+          <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+            <Image
+              src="/snapchef-logo.png"
+              alt="SnapChef logo"
+              width={36}
+              height={36}
+              style={{ borderRadius: "10px", objectFit: "cover" }}
+              priority
+            />
+            <span style={{ fontSize: "1.15rem", fontWeight: 700, color: "#1f2937" }}>SnapChef</span>
+          </div>
+          {/* Back to main app */}
+          <button
+            onClick={() => router.push("/")}
+            style={{ display: "flex", alignItems: "center", gap: "6px", border: "1px solid #e5e7eb", background: "#f8fafc", borderRadius: "999px", padding: "7px 14px", cursor: "pointer", fontSize: "0.83rem", fontWeight: 600, color: "#374151", transition: "background 0.15s, border-color 0.15s" }}
+            onMouseEnter={e => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.borderColor = "#cbd5e1"; }}
+            onMouseLeave={e => { e.currentTarget.style.background = "#f8fafc"; e.currentTarget.style.borderColor = "#e5e7eb"; }}
+          >
+            ← Home
+          </button>
+        </div>
+      </header>
+
       {/* ── PROFILE BANNER ── */}
-      <div style={{ width: "100%", background: "white", borderBottom: "1px solid #e5e7eb", boxShadow: "0 2px 12px rgba(0,0,0,0.05)", position: "relative" }}>
-        {/* back */}
-        <button onClick={() => router.push("/")} style={{ position: "absolute", top: "16px", left: "20px", border: "none", background: "none", cursor: "pointer", color: "#6b7280", fontSize: "0.83rem", fontWeight: 600, display: "flex", alignItems: "center", gap: "4px" }}>
-          ← Home
-        </button>
+      <div style={{ width: "100%", background: "white", borderBottom: "1px solid #e5e7eb", boxShadow: "0 2px 12px rgba(0,0,0,0.05)" }}>
 
         <div style={{ maxWidth: "1100px", margin: "0 auto", padding: "40px 24px 32px", display: "flex", alignItems: "center", gap: "28px", flexWrap: "wrap" }}>
 
