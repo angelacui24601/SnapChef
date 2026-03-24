@@ -89,9 +89,15 @@ export default function HomePage() {
         userProfile: preferences
           ? {
               age: preferences.age || undefined,
+              sex: preferences.sex || undefined,
+              // Resolve custom goal to its display value
+              goal: preferences.goal === "custom"
+                ? (preferences.customGoal.trim() || undefined)
+                : (preferences.goal || undefined),
               allergies: preferences.allergies,
               religiousRestrictions: preferences.religious,
               medicalRestrictions: preferences.medical ? [preferences.medical] : [],
+              kitchenTools: preferences.kitchenTools.length > 0 ? preferences.kitchenTools : undefined,
             }
           : undefined,
         kitchenState: {

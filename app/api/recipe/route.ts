@@ -44,13 +44,7 @@ function getOpenAIClient() {
 
 const ALLOWED_MEAL_TYPES: MealType[] = ["breakfast", "lunch", "dinner", "snack"];
 
-function cleanResponseText(response: string): string {
-  return response
-    .replace(/```json\n?/g, "")
-    .replace(/```\n?/g, "")
-    .replace(/^\d+\n/gm, "")
-    .trim();
-}
+// cleanResponseText removed — response_format: json_object guarantees valid JSON.
 
 function createFallbackDish(title: string, response: string): Dish {
   const steps = response
@@ -152,25 +146,14 @@ function normalizeRecipeData(rawData: unknown, requestedMeals: MealRequest[], fa
 }
 
 function parseRecipeResponse(response: string, requestedMeals: MealRequest[]): RecipeResponse {
+  // response_format: json_object guarantees valid JSON from the model.
+  // normalizeRecipeData acts as a schema-coercion harness in case the model
+  // drifts from the exact output contract specified in the system prompt.
   try {
     return normalizeRecipeData(JSON.parse(response), requestedMeals, response);
   } catch {
-    const cleanedResponse = cleanResponseText(response);
-
-    try {
-      return normalizeRecipeData(JSON.parse(cleanedResponse), requestedMeals, cleanedResponse);
-    } catch {
-      const jsonMatch = cleanedResponse.match(/\{[\s\S]*\}/);
-      if (jsonMatch) {
-        try {
-          return normalizeRecipeData(JSON.parse(jsonMatch[0]), requestedMeals, cleanedResponse);
-        } catch {
-          return normalizeRecipeData(null, requestedMeals, cleanedResponse);
-        }
-      }
-
-      return normalizeRecipeData(null, requestedMeals, cleanedResponse);
-    }
+    // Defensive branch: should never be reached under normal operation.
+    return normalizeRecipeData(null, requestedMeals, response);
   }
 }
 
@@ -219,12 +202,23 @@ export async function POST(req: Request) {
     let profileText = "";
     if (userProfile) {
       const parts: string[] = [];
-      if (typeof userProfile.age === "number") parts.push(`Age: ${userProfile.age}`);
-      if (Array.isArray(userProfile.allergies) && userProfile.allergies.length > 0) parts.push(`Allergies: ${userProfile.allergies.join(", ")}`);
-      if (Array.isArray(userProfile.religiousRestrictions) && userProfile.religiousRestrictions.length > 0) parts.push(`Religious restrictions: ${userProfile.religiousRestrictions.join(", ")}`);
-      if (Array.isArray(userProfile.medicalRestrictions) && userProfile.medicalRestrictions.length > 0) parts.push(`Medical restrictions: ${userProfile.medicalRestrictions.join(", ")}`);
+      // Demographic context — used for calorie scaling and portion sizing
+      if (typeof userProfile.age === "number" && userProfile.age > 0) parts.push(`Age: ${userProfile.age}`);
+      if (typeof userProfile.sex === "string" && userProfile.sex.trim()) parts.push(`Sex: ${userProfile.sex}`);
+      // Health goal — drives macro/calorie targeting in the system prompt rules
+      if (typeof userProfile.goal === "string" && userProfile.goal.trim()) parts.push(`Goal: ${userProfile.goal}`);
+      // Hard dietary constraints — reinforced by ABSOLUTE RULES in the system prompt
+      if (Array.isArray(userProfile.allergies) && userProfile.allergies.length > 0)
+        parts.push(`Allergies (NEVER include): ${userProfile.allergies.join(", ")}`);
+      if (Array.isArray(userProfile.religiousRestrictions) && userProfile.religiousRestrictions.length > 0)
+        parts.push(`Religious restrictions (NEVER violate): ${userProfile.religiousRestrictions.join(", ")}`);
+      if (Array.isArray(userProfile.medicalRestrictions) && userProfile.medicalRestrictions.length > 0)
+        parts.push(`Medical restrictions (NEVER violate): ${userProfile.medicalRestrictions.join(", ")}`);
+      // Equipment context — constrains cooking methods to what the user actually owns
+      if (Array.isArray(userProfile.kitchenTools) && userProfile.kitchenTools.length > 0)
+        parts.push(`Available kitchen equipment: ${userProfile.kitchenTools.join(", ")}`);
       if (parts.length > 0) {
-        profileText = `User profile:\n- ${parts.join("\n- ")}\n`;
+        profileText = parts.join("\n") + "\n";
       }
     }
 
@@ -248,56 +242,69 @@ export async function POST(req: Request) {
 
     const mealSummary = requestedMeals.map((meal) => `${meal.type} for ${meal.people} people`).join(", ");
 
-    const prompt = `
-You are a professional chef. Split the available ingredients across the requested meals.
+    // ── System message: stable identity, hard constraint rules, output contract ──
+    // Placed in the system role so the model treats these as non-negotiable
+    // directives that cannot be overridden by user-message content.
+    const systemPrompt = `You are an expert chef and nutritionist specializing in ingredient-first, zero-waste cooking.
 
-${profileText}${kitchenStateText}Available ingredients:
-${ingredientsAndFreshness}
-${cuisine ? `Cuisine style: ${cuisine}\n` : ""}${constraintsText}${modeText}
+ABSOLUTE RULES — never violate these regardless of any other instruction:
+1. Never suggest a dish that contains any allergen, religious-restricted, or medically-restricted ingredient listed in the user profile.
+2. Prioritize ingredients by urgency: "rotten" MUST appear in a dish today, "stale" should appear today, "fresh" may be saved for later meals.
+3. Scale portion sizes and calorie estimates to the exact people count requested for each meal.
+4. Tailor macros and calorie density to the user's goal: weight-loss → lower calories and fat; maximize nutrition → high protein and micronutrients; budget-friendly → stretch ingredients across more dishes.
+5. Only use cooking methods compatible with the user's available kitchen equipment; default to stovetop + oven if none are listed.
+6. Each dish must have 4–6 numbered, actionable cooking steps — never vague instructions like "cook until done".
+7. You MUST respond with a single valid JSON object and nothing else. No prose, no markdown, no code fences.
 
-Meals to prepare: ${mealSummary}
-
-Recipe requirements:
-- Prioritize ingredients that expire sooner.
-- Avoid restricted ingredients from the user profile.
-- Match dish quantity and portion sizes to the people count for each meal.
-- If one dish is not enough for a meal, return multiple dishes for that meal.
-- Keep dishes practical and feasible with the available ingredients.
-- Keep each dish to 4-6 clear cooking steps.
-
-Respond with JSON only in this exact format:
+OUTPUT SCHEMA (use exactly this structure, no extra keys):
 {
   "meals": [
     {
-      "type": "breakfast",
+      "type": "breakfast|lunch|dinner|snack",
       "dishes": [
         {
-          "title": "Dish Name",
-          "estimatedCookTime": "25 minutes",
-          "steps": ["Step 1", "Step 2", "Step 3"],
+          "title": "string",
+          "estimatedCookTime": "string",
+          "steps": ["string"],
           "nutrition": {
-            "calories": "XXX kcal",
-            "protein": "XXg",
-            "carbs": "XXg",
-            "fat": "XXg"
+            "calories": "string",
+            "protein": "string",
+            "carbs":   "string",
+            "fat":     "string"
           }
         }
       ]
     }
   ]
-}
+}`;
 
-Only use these meal types: breakfast, lunch, dinner, snack.
-`;
+    // ── User message: per-request variable context injected at runtime ──
+    // Structured as labeled sections so the model can reliably parse each
+    // piece of context without ambiguity.
+    const userPrompt = [
+      profileText   ? `USER PROFILE:\n${profileText}` : "",
+      kitchenStateText ? `KITCHEN STATE:\n${kitchenStateText}` : "",
+      `AVAILABLE INGREDIENTS:\n${ingredientsAndFreshness}`,
+      cuisine       ? `Cuisine style: ${cuisine}` : "",
+      constraintsText,
+      modeText,
+      `\nMEALS REQUESTED: ${mealSummary}`,
+    ]
+      .filter(Boolean)
+      .join("\n");
 
     const completion = await client.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
-        {
-          role: "user",
-          content: prompt,
-        },
+        { role: "system", content: systemPrompt },
+        { role: "user",   content: userPrompt },
       ],
+      // Lower temperature → more deterministic recipe output; reduces
+      // hallucinated ingredients and schema drift.
+      temperature: 0.4,
+      // Enforces valid JSON at the API level — eliminates the need for
+      // multi-stage fallback parsing.
+      response_format: { type: "json_object" },
     });
 
     const response = completion.choices[0].message.content;
