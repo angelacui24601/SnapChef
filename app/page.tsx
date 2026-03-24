@@ -280,7 +280,6 @@ export default function HomePage() {
 
           <div style={{ flex: "0 0 280px" }}>
             <UserProfileSidebar
-              isGuest={isGuest}
               isLoading={isLoadingUserData}
               onEditProfile={() => setShowPreferencesModal(true)}
             />

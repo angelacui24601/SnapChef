@@ -1,9 +1,8 @@
 import type { Dish } from "./apiService";
 import { buildRecipeSourceKey } from "./favorites";
 
-// Requests go directly to Next.js API routes (/api/*).
-// Same-origin means the browser automatically sends the sc_session cookie.
-const BACKEND_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "/api";
+// All requests go to Next.js API routes (/api/*).
+const BACKEND_API_BASE_URL = "/api";
 
 interface BackendApiError {
   error?: string;

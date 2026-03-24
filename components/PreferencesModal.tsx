@@ -138,8 +138,8 @@ export default function PreferencesModal({ isOpen, onClose }: Props) {
     try {
       const { error: ssoError } = await signIn.sso({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectCallbackUrl: "/",
+        redirectUrl: "/",
+        redirectCallbackUrl: "/sso-callback",
       });
       if (ssoError) {
         sessionStorage.removeItem(PENDING_PREFS_KEY);
@@ -158,8 +158,8 @@ export default function PreferencesModal({ isOpen, onClose }: Props) {
     try {
       const { error: ssoError } = await signIn.sso({
         strategy: "oauth_apple",
-        redirectUrl: "/sso-callback",
-        redirectCallbackUrl: "/",
+        redirectUrl: "/",
+        redirectCallbackUrl: "/sso-callback",
       });
       if (ssoError) {
         sessionStorage.removeItem(PENDING_PREFS_KEY);

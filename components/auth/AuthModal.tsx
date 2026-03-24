@@ -56,8 +56,8 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     try {
       const { error: ssoError } = await signIn.sso({
         strategy: "oauth_google",
-        redirectUrl: "/sso-callback",
-        redirectCallbackUrl: "/",
+        redirectUrl: "/",
+        redirectCallbackUrl: "/sso-callback",
       });
       if (ssoError) {
         setError(ssoError.longMessage ?? "Google sign-in failed. Please try email or continue as guest.");
@@ -78,8 +78,8 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
     try {
       const { error: ssoError } = await signIn.sso({
         strategy: "oauth_apple",
-        redirectUrl: "/sso-callback",
-        redirectCallbackUrl: "/",
+        redirectUrl: "/",
+        redirectCallbackUrl: "/sso-callback",
       });
       if (ssoError) {
         setError(ssoError.longMessage ?? "Apple sign-in failed. Please try email or continue as guest.");
@@ -166,6 +166,9 @@ export default function AuthModal({ isOpen, onClose, onContinueAsGuest }: AuthMo
         </div>
 
         {error && <p className="mt-4 rounded-2xl bg-rose-50 px-4 py-3 text-sm text-rose-600">{error}</p>}
+
+        {/* Required mount point for Clerk's bot-protection CAPTCHA widget */}
+        <div id="clerk-captcha" />
 
         <button
           type="button"

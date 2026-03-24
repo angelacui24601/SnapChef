@@ -33,6 +33,8 @@ interface SnapChefAuthContextValue {
   openAuthModal: () => void;
   continueAsGuest: () => void;
   requireAuth: (action: () => void | Promise<void>) => void;
+  /** Signs the current user out and clears all local state via the Clerk SDK. */
+  signOut: () => Promise<void>;
   clerkUser: ClerkUserSnapshot | null;
   favorites: FavoriteRecipeRecord[];
   preferences: UserPreferencesRecord | null;
@@ -47,7 +49,7 @@ interface SnapChefAuthContextValue {
 const SnapChefAuthContext = createContext<SnapChefAuthContextValue | null>(null);
 
 export function SnapChefAuthProvider({ children }: { children: React.ReactNode }) {
-  const { isLoaded, isSignedIn } = useAuth();
+  const { isLoaded, isSignedIn, signOut: clerkSignOut } = useAuth();
   const { user } = useUser();
   const [isGuest, setIsGuest] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -132,6 +134,15 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   const continueAsGuest = () => {
     setIsGuest(true);
     setShowAuthModal(false);
+  };
+
+  /**
+   * Signs out the current Clerk session.
+   * Local favorites/preferences are cleared automatically via the
+   * isSignedIn effect above once Clerk invalidates the session.
+   */
+  const signOut = async () => {
+    await clerkSignOut();
   };
 
   const requireAuth = (action: () => void | Promise<void>) => {
@@ -219,6 +230,7 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
         openAuthModal,
         continueAsGuest,
         requireAuth,
+        signOut,
         clerkUser,
         favorites,
         preferences,

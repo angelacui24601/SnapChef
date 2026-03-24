@@ -1,5 +1,16 @@
 CREATE EXTENSION IF NOT EXISTS pgcrypto;
 
+-- Synced from Clerk via the /api/webhooks/clerk endpoint.
+-- clerk_id is Clerk's opaque user ID (e.g. "user_2abc…").
+CREATE TABLE IF NOT EXISTS users (
+  clerk_id   TEXT PRIMARY KEY,
+  email      TEXT,
+  first_name TEXT,
+  last_name  TEXT,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+  updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
 -- Recipes are content — stored once and referenced by favorites.
 CREATE TABLE IF NOT EXISTS recipes (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -9,10 +20,9 @@ CREATE TABLE IF NOT EXISTS recipes (
   steps TEXT[] NOT NULL DEFAULT ARRAY[]::TEXT[]
 );
 
--- Keyed directly by Clerk's user ID — no separate users table needed.
--- Clerk owns auth; we only store what Clerk doesn't.
+-- clerk_id is a foreign key into users so deleting a user cascades.
 CREATE TABLE IF NOT EXISTS user_preferences (
-  clerk_id TEXT PRIMARY KEY,
+  clerk_id TEXT PRIMARY KEY REFERENCES users(clerk_id) ON DELETE CASCADE,
   age INT,
   sex TEXT,
   goal TEXT,
@@ -26,7 +36,7 @@ CREATE TABLE IF NOT EXISTS user_preferences (
 );
 
 CREATE TABLE IF NOT EXISTS favorites (
-  clerk_id TEXT NOT NULL,
+  clerk_id TEXT NOT NULL REFERENCES users(clerk_id) ON DELETE CASCADE,
   recipe_id UUID NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   PRIMARY KEY (clerk_id, recipe_id)

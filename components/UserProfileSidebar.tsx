@@ -4,14 +4,13 @@ import { useRouter } from "next/navigation";
 import { useSnapChefAuth } from "./auth/AuthProvider";
 
 interface UserProfileSidebarProps {
-  isGuest?: boolean;
   isLoading?: boolean;
   onEditProfile?: () => void;
 }
 
-export default function UserProfileSidebar({ isGuest = false, isLoading = false, onEditProfile }: UserProfileSidebarProps) {
+export default function UserProfileSidebar({ isLoading = false, onEditProfile }: UserProfileSidebarProps) {
   const router = useRouter();
-  const { clerkUser, preferences } = useSnapChefAuth();
+  const { clerkUser, preferences, signOut, isGuest } = useSnapChefAuth();
 
   const handleEditProfile = () => {
     if (onEditProfile) {
@@ -318,6 +317,48 @@ export default function UserProfileSidebar({ isGuest = false, isLoading = false,
         </svg>
         {clerkUser ? 'Edit Profile' : isGuest ? 'Edit Session Preferences' : 'Edit Preferences'}
       </button>
+
+      {/* Sign-out button — only shown when a Clerk session is active */}
+      {clerkUser && (
+        <button
+          onClick={() => void signOut()}
+          style={{
+            width: '100%',
+            background: 'transparent',
+            color: '#6b7280',
+            fontSize: '0.85rem',
+            fontWeight: '500',
+            padding: '10px 16px',
+            border: '1px solid #e5e7eb',
+            borderRadius: '12px',
+            cursor: 'pointer',
+            transition: 'all 0.2s ease',
+            marginTop: '8px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = '#fef2f2';
+            e.currentTarget.style.color = '#dc2626';
+            e.currentTarget.style.borderColor = '#fecaca';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'transparent';
+            e.currentTarget.style.color = '#6b7280';
+            e.currentTarget.style.borderColor = '#e5e7eb';
+          }}
+        >
+          {/* Log-out icon */}
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+            <polyline points="16 17 21 12 16 7" />
+            <line x1="21" y1="12" x2="9" y2="12" />
+          </svg>
+          Sign out
+        </button>
+      )}
     </div>
   );
 }
