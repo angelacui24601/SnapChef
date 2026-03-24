@@ -378,7 +378,22 @@ export default function ProfilePage() {
               {/* age */}
               <div>
                 <label style={sharedLabelStyle}>Age</label>
-                <input type="number" min="0" value={draftPreferences.age} onChange={e => updatePreferences({ age: Number(e.target.value) })} placeholder="Enter your age" style={sharedInputStyle} />
+                <input
+                  type="number"
+                  min={1}
+                  max={200}
+                  value={draftPreferences.age}
+                  onChange={e => updatePreferences({ age: Number(e.target.value) })}
+                  placeholder="Enter your age"
+                  style={{
+                    ...sharedInputStyle,
+                    // Red border when the entered age is out of the valid range
+                    borderColor: draftPreferences.age > 0 && (draftPreferences.age < 1 || draftPreferences.age > 200) ? "#f87171" : undefined,
+                  }}
+                />
+                {draftPreferences.age > 0 && (draftPreferences.age < 1 || draftPreferences.age > 200) && (
+                  <p style={{ margin: "5px 0 0 0", fontSize: "0.78rem", color: "#ef4444" }}>Please enter a valid age between 1 and 200.</p>
+                )}
               </div>
 
               {/* allergies */}
@@ -461,14 +476,24 @@ export default function ProfilePage() {
               </div>
 
               {/* save / cancel */}
-              <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
-                <button onClick={handleCancel} style={{ flex: 1, background: "#f3f4f6", color: "#374151", fontSize: "0.95rem", fontWeight: 700, padding: "14px 20px", border: "none", borderRadius: "14px", cursor: "pointer" }}>
-                  Cancel
-                </button>
-                <button onClick={() => requireAuth(handleSave)} disabled={isSaving} style={{ flex: 1, background: "linear-gradient(135deg, #22c55e, #16a34a)", color: "white", fontSize: "0.95rem", fontWeight: 700, padding: "14px 20px", border: "none", borderRadius: "14px", cursor: isSaving ? "progress" : "pointer", boxShadow: "0 4px 14px rgba(34,197,94,0.3)" }}>
-                  {isSaving ? "Saving…" : "Save Changes"}
-                </button>
-              </div>
+              {(() => {
+                const ageInvalid = draftPreferences.age > 0 && (draftPreferences.age < 1 || draftPreferences.age > 200);
+                return (
+                  <div style={{ display: "flex", gap: "12px", marginTop: "8px" }}>
+                    <button onClick={handleCancel} style={{ flex: 1, background: "#f3f4f6", color: "#374151", fontSize: "0.95rem", fontWeight: 700, padding: "14px 20px", border: "none", borderRadius: "14px", cursor: "pointer" }}>
+                      Cancel
+                    </button>
+                    <button
+                      onClick={() => requireAuth(handleSave)}
+                      disabled={isSaving || ageInvalid}
+                      title={ageInvalid ? "Fix the age field before saving" : undefined}
+                      style={{ flex: 1, background: ageInvalid ? "#d1d5db" : "linear-gradient(135deg, #22c55e, #16a34a)", color: ageInvalid ? "#9ca3af" : "white", fontSize: "0.95rem", fontWeight: 700, padding: "14px 20px", border: "none", borderRadius: "14px", cursor: isSaving || ageInvalid ? "not-allowed" : "pointer", boxShadow: ageInvalid ? "none" : "0 4px 14px rgba(34,197,94,0.3)" }}
+                    >
+                      {isSaving ? "Saving…" : "Save Changes"}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           </div>
         ) : (

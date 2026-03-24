@@ -18,9 +18,17 @@ interface Props {
 }
 
 export default function StepBasicInfo({ profile, update, onNext }: Props) {
+  const ageNum = profile.age === "" ? NaN : Number(profile.age);
+  // Age is erroneous if it is negative, zero, or greater than 200
+  const ageError =
+    !isNaN(ageNum) && profile.age !== "" && (ageNum <= 0 || ageNum > 200)
+      ? "Please enter a valid age between 1 and 200."
+      : null;
+
   const isValid =
     profile.age !== "" &&
-    Number(profile.age) > 0 &&
+    ageNum > 0 &&
+    ageNum <= 200 &&
     profile.sex !== "" &&
     profile.goal !== "" &&
     (profile.goal !== "custom" || profile.customGoal.trim() !== "");
@@ -37,15 +45,21 @@ export default function StepBasicInfo({ profile, update, onNext }: Props) {
           <input
             type="number"
             min={1}
-            max={120}
+            max={200}
             placeholder="e.g. 28"
             value={profile.age}
             onChange={(e) =>
               update({ age: e.target.value === "" ? "" : Number(e.target.value) })
             }
-            className="w-full px-4 py-3 border-2 border-gray-200 rounded-xl text-sm focus:outline-none focus:border-green-400 transition-colors"
+            className={`w-full px-4 py-3 border-2 rounded-xl text-sm focus:outline-none transition-colors ${
+              ageError ? "border-red-400 focus:border-red-400" : "border-gray-200 focus:border-green-400"
+            }`}
           />
-          <p className="text-xs text-gray-400 mt-1.5">Used to estimate your daily calorie needs</p>
+          {ageError ? (
+            <p className="text-xs text-red-500 mt-1.5">{ageError}</p>
+          ) : (
+            <p className="text-xs text-gray-400 mt-1.5">Used to estimate your daily calorie needs</p>
+          )}
         </div>
 
         {/* Biological Sex */}
