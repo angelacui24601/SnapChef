@@ -32,22 +32,47 @@ export async function POST(req: Request) {
       model: "gpt-4o-mini",
       messages: [
         {
+          // System message: establishes vision-specialist identity and output contract.
+          // Placing the JSON schema requirement here prevents the model from adding
+          // prose or markdown around the response.
+          role: "system",
+          content:
+            "You are a strict food-safety and culinary expert. " +
+            "Your only job is to identify raw or processed FOOD INGREDIENTS that are safe to eat and cook with. " +
+            "\n\nINCLUDE: actual edible ingredients (vegetables, fruits, meat, dairy, grains, spices, oils, sauces, eggs, etc.). " +
+            "\n\nEXCLUDE — never include these even if visible in the image: " +
+            "kitchen tools or utensils (knives, pans, cutting boards, appliances), " +
+            "packaging, containers, plates, or bowls, " +
+            "non-food objects (hands, countertops, labels, backgrounds), " +
+            "substances that are not safe or intended for human consumption. " +
+            "\n\nIf the image contains no identifiable edible ingredients, set \"ingredients\" to an empty array " +
+            "and set \"warning\" to a short human-readable message explaining why (e.g. \"No food ingredients detected. The image appears to show kitchen equipment.\"). " +
+            "If food is found, omit the \"warning\" key entirely. " +
+            "\n\nAlways respond with a single valid JSON object: " +
+            "{\"ingredients\": [\"ingredient1\", \"ingredient2\"]} or {\"ingredients\": [], \"warning\": \"...\"}. " +
+            "Use lowercase singular nouns (e.g. \"chicken breast\", \"carrot\", \"olive oil\"). " +
+            "Never include explanations, markdown, or any text outside the JSON object.",
+        },
+        {
           role: "user",
           content: [
             {
               type: "text",
-              text: "Analyze this image and identify all the food ingredients you can see. Return ONLY a valid JSON array of ingredient names as strings. Do not include any other text, explanations, or formatting. Example: [\"chicken breast\", \"carrots\", \"onions\"]. If you can't identify any ingredients, return an empty array []."
+              text: "Identify all food ingredients visible in this image.",
             },
             {
               type: "image_url",
-              image_url: {
-                url: `data:${image.type};base64,${base64Image}`
-              }
-            }
-          ]
-        }
+              image_url: { url: `data:${image.type};base64,${base64Image}` },
+            },
+          ],
+        },
       ],
-      max_tokens: 300
+      // Low temperature for a deterministic, factual visual recognition task.
+      temperature: 0.2,
+      max_tokens: 400,
+      // Enforces valid JSON output at the API level — eliminates the need
+      // for the multi-stage fallback parsing cascade.
+      response_format: { type: "json_object" },
     });
 
     const response = completion.choices[0].message.content;
@@ -55,57 +80,21 @@ export async function POST(req: Request) {
       throw new Error("No response from AI");
     }
 
-    // Parse the JSON response
-    let ingredients: string[];
-    try {
-      // First try to parse as JSON
-      ingredients = JSON.parse(response);
-      if (!Array.isArray(ingredients)) {
-        throw new Error("Response is not an array");
-      }
-    } catch (parseError) {
-      console.warn("Failed to parse JSON response, trying fallback parsing:", response);
+    // response_format: json_object guarantees valid JSON; extract and sanitize.
+    const parsed = JSON.parse(response) as { ingredients?: unknown; warning?: unknown };
+    const rawList = Array.isArray(parsed.ingredients) ? parsed.ingredients : [];
+    const ingredients: string[] = rawList
+      .filter((item): item is string => typeof item === "string" && item.trim().length > 0)
+      .map((item) => item.trim().toLowerCase())
+      .filter((item, index, arr) => arr.indexOf(item) === index); // deduplicate
 
-      // Fallback: try to extract ingredients from various text formats
-      let cleanedResponse = response.trim();
+    // Surface a warning when the model found no edible ingredients
+    // (e.g. irrelevant photo, kitchen equipment, non-food image).
+    const warning = typeof parsed.warning === "string" && parsed.warning.trim().length > 0
+      ? parsed.warning.trim()
+      : undefined;
 
-      // Remove markdown code blocks if present
-      cleanedResponse = cleanedResponse.replace(/^```(?:json)?\s*\n?/i, '').replace(/\n?```\s*$/i, '');
-
-      // Try parsing again after cleaning
-      try {
-        ingredients = JSON.parse(cleanedResponse);
-        if (!Array.isArray(ingredients)) {
-          throw new Error("Cleaned response is not an array");
-        }
-      } catch (secondParseError) {
-        // Final fallback: extract from text
-        const lines = cleanedResponse.split('\n')
-          .map(line => line.trim())
-          .filter(line => line.length > 0)
-          .map(line => {
-            // Remove common list markers and quotes
-            return line
-              .replace(/^[•\-*]\s*/, '') // Remove bullet points
-              .replace(/^["']|["']$/g, '') // Remove surrounding quotes
-              .replace(/^,\s*/, '') // Remove leading commas
-              .trim();
-          })
-          .filter(line => line.length > 0 && !line.match(/^\d+\.$/)); // Remove empty lines and numbered markers
-
-        ingredients = lines;
-      }
-    }
-
-    // Validate and clean the ingredients
-    ingredients = ingredients
-      .filter(ing => typeof ing === 'string' && ing.trim().length > 0)
-      .map(ing => ing.trim().toLowerCase())
-      .filter((ing, index, arr) => arr.indexOf(ing) === index); // Remove duplicates
-
-    console.log("Parsed ingredients:", ingredients);
-
-    return NextResponse.json({ ingredients });
+    return NextResponse.json({ ingredients, ...(warning ? { warning } : {}) });
 
   } catch (error) {
     console.error("Error detecting ingredients:", error);

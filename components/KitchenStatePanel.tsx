@@ -128,6 +128,13 @@ export default function KitchenStatePanel({
     try {
       const response = await detectIngredients(file);
       if (Array.isArray(response.ingredients)) {
+        // Surface a model-generated warning when the photo has no edible food
+        // (e.g. a photo of kitchen tools, a random object, or a non-food scene).
+        if (response.warning) {
+          setError(response.warning);
+          return;
+        }
+
         const nextIngredients = [...ingredients];
         response.ingredients.forEach((ingredientName) => {
           const cleanName = ingredientName.trim();

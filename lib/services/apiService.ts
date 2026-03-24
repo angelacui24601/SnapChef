@@ -9,13 +9,21 @@ export interface DetectIngredientsRequest {
 
 export interface DetectIngredientsResponse {
   ingredients: string[];
+  /** Present when the image contained no edible ingredients (e.g. irrelevant photo or kitchen equipment). */
+  warning?: string;
 }
 
 export interface UserProfile {
   age?: number;
+  /** User's biological sex — used for calorie and portion scaling */
+  sex?: string;
+  /** User's dietary/health goal (e.g. "weight-loss", "maximize nutrition") */
+  goal?: string;
   allergies?: string[];
   religiousRestrictions?: string[];
   medicalRestrictions?: string[];
+  /** Kitchen tools available — constrains cooking methods in generated recipes */
+  kitchenTools?: string[];
 }
 
 export interface KitchenStateIngredient {
