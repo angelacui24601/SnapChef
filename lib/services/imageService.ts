@@ -1,4 +1,4 @@
-import { detectIngredients as detectIngredientsApi } from "../../services/apiService";
+import { detectIngredients as detectIngredientsApi } from "./apiService";
 
 export interface IngredientDetectionResult {
   ingredients: string[];

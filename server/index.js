@@ -4,6 +4,7 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const pool = require("./db/pool");
 const userRoutes = require("./routes/userRoutes");
 const preferencesRoutes = require("./routes/preferencesRoutes");
@@ -12,8 +13,35 @@ const favoriteRoutes = require("./routes/favoriteRoutes");
 const app = express();
 const port = Number(process.env.API_PORT || 4000);
 
-app.use(cors());
+// When requests reach Express via the Next.js proxy rewrite they originate from
+// the Next.js server process, so CORS is mostly irrelevant in that path.
+// This origin list covers direct browser requests used in development.
+const allowedOrigins = [
+  "http://localhost:3000",
+  "http://localhost:3001",
+];
+
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        cb(null, true);
+      } else {
+        cb(new Error(`CORS: origin '${origin}' is not allowed`));
+      }
+    },
+    credentials: true, // required so the browser sends/receives cookies
+  }),
+);
+
 app.use(express.json({ limit: "2mb" }));
+
+// Signed cookies — the secret prevents clients from forging a sc_session value.
+const cookieSecret = process.env.COOKIE_SECRET;
+if (!cookieSecret) {
+  console.warn("[warn] COOKIE_SECRET is not set — using insecure dev fallback");
+}
+app.use(cookieParser(cookieSecret ?? "dev-insecure-secret-change-me"));
 
 app.get("/health", async (_req, res) => {
   try {

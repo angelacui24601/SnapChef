@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { useSnapChefAuth } from "../../components/auth/AuthProvider";
-import type { UserPreferencesRecord } from "../../services/backendApi";
+import type { UserPreferencesRecord } from "../../lib/services/backendApi";
 import StepBasicInfo from "../../components/onboarding/StepBasicInfo";
 import StepDietaryNeeds from "../../components/onboarding/StepDietaryNeeds";
 import StepKitchenSetup from "../../components/onboarding/StepKitchenSetup";
@@ -86,7 +86,7 @@ function toPreferenceRecord(profile: OnboardingProfile): UserPreferencesRecord {
 
 export default function OnboardingPage() {
   const router = useRouter();
-  const { isGuest, isLoadingUserData, isLoggedIn, openAuthModal, preferences, saveUserPreferences, setGuestPreferences, syncError } = useSnapChefAuth();
+  const { isGuest, isLoadingUserData, isLoggedIn, openAuthModal, preferences, saveUserPreferences, setGuestPreferences } = useSnapChefAuth();
   const [step, setStep] = useState(1);
   const [profile, setProfile] = useState<OnboardingProfile>(EMPTY_PROFILE);
   const [submitError, setSubmitError] = useState("");
@@ -187,9 +187,9 @@ export default function OnboardingPage() {
 
         {/* Step content — key triggers re-mount + step-enter CSS animation */}
         <div key={step} className="px-7 py-8 step-enter">
-          {(submitError || syncError) && (
+          {submitError && (
             <div className="mb-5 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-              {submitError || syncError}
+              {submitError}
             </div>
           )}
           {step === 1 && (

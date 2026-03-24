@@ -1,7 +1,9 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  // All backend functionality now lives in Next.js API routes under /api/*.
+  // No proxy rewrite needed — requests are handled by the same Next.js process
+  // both locally and on Vercel.
 };
 
 export default nextConfig;

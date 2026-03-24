@@ -4,16 +4,17 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "dev:api": "node server.js",
-    "dev:all": "node server.js & next dev",
-    "dev:setup": "node db/setup.js",
+    "dev:api": "node server/index.js",
+    "dev:all": "node server/index.js & next dev",
+    "dev:setup": "node server/db/setup.js",
     "build": "next build",
     "start": "next start",
-    "start:api": "node server.js",
+    "start:api": "node server/index.js",
     "lint": "eslint"
   },
   "dependencies": {
     "@clerk/nextjs": "^7.0.6",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
@@ -25,7 +26,9 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/cookie-parser": "^1.4.10",
     "@types/node": "^20",
+    "@types/pg": "^8.20.0",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "eslint": "^9",

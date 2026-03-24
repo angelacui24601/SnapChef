@@ -41,6 +41,14 @@ async function setup() {
   const client = await pool.connect();
 
   try {
+    // Drop old schema (safe during development — clears any stale tables)
+    console.log("Dropping old tables if they exist...");
+    await client.query(`
+      DROP TABLE IF EXISTS favorites CASCADE;
+      DROP TABLE IF EXISTS user_preferences CASCADE;
+      DROP TABLE IF EXISTS recipes CASCADE;
+      DROP TABLE IF EXISTS users CASCADE;
+    `);
     console.log("Running schema.sql...");
     await client.query(sql);
     console.log("✓ Database schema applied successfully.");

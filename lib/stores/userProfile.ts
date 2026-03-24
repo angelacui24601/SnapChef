@@ -1,7 +1,7 @@
 "use client";
 
 import { useSnapChefAuth } from "../../components/auth/AuthProvider";
-import type { UserPreferencesRecord, FavoriteRecipeRecord } from "../../services/backendApi";
+import type { UserPreferencesRecord, FavoriteRecipeRecord } from "../services/backendApi";
 
 export type { UserPreferencesRecord, FavoriteRecipeRecord };
 
@@ -22,14 +22,11 @@ export interface UserProfile {
 export function useUserProfile() {
   const {
     clerkUser,
-    userId,
     preferences,
     favorites,
     isLoggedIn,
     isGuest,
-    isSyncingUser,
     isLoadingUserData,
-    syncError,
     saveUserPreferences,
     toggleFavoriteDish,
     removeFavoriteRecipe,
@@ -37,14 +34,11 @@ export function useUserProfile() {
 
   return {
     clerkUser,
-    userId,
     preferences,
     favorites,
     isLoggedIn,
     isGuest,
-    isSyncingUser,
     isLoadingUserData,
-    syncError,
     savePreferences: saveUserPreferences,
     toggleFavorite: toggleFavoriteDish,
     removeFavorite: removeFavoriteRecipe,

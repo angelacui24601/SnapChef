@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import type { Dish, GenerateRecipeResponse } from "../services/apiService";
+import type { Dish, GenerateRecipeResponse } from "../lib/services/apiService";
 import { useSnapChefAuth } from "./auth/AuthProvider";
-import { buildRecipeSourceKey } from "../services/favorites";
+import { buildRecipeSourceKey } from "../lib/services/favorites";
 
 interface RecipeOutputPanelProps {
   result: GenerateRecipeResponse | null;
@@ -16,7 +16,7 @@ function titleCase(value: string): string {
 }
 
 export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOutputPanelProps) {
-  const { favorites, isLoggedIn, isSyncingUser, requireAuth, toggleFavoriteDish, userId } = useSnapChefAuth();
+  const { favorites, isLoggedIn, requireAuth, toggleFavoriteDish } = useSnapChefAuth();
   const [selectedTabs, setSelectedTabs] = useState<Record<number, number>>({});
   const [pendingKeys, setPendingKeys] = useState<Set<string>>(new Set());
   const favoriteSourceKeys = favorites.map((favorite) => favorite.sourceKey);
@@ -141,13 +141,7 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
                   justifyContent: "center",
                   flexShrink: 0,
                 }}
-                title={userId
-                  ? (isFavorite ? "Remove from favorites" : "Save to favorites")
-                  : isGuest
-                    ? (isFavorite ? "Remove guest favorite" : "Save for this guest session")
-                    : isLoggedIn && isSyncingUser
-                      ? "Syncing your account..."
-                      : "Sign in or continue as guest to save favorites"}
+                title={isFavorite ? "Remove from favorites" : isLoggedIn ? "Save to favorites" : isGuest ? "Save for this guest session" : "Sign in or continue as guest to save favorites"}
               >
                 <svg width="22" height="22" viewBox="0 0 24 24" fill={isFavorite ? "#ef4444" : "none"} stroke="#ef4444" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M12 21s-6.7-4.35-9.33-8.02C.9 10.52 1.5 6.8 4.58 5.02c2.27-1.3 4.94-.64 6.42 1.05 1.48-1.69 4.15-2.35 6.42-1.05 3.08 1.78 3.68 5.5 1.91 7.96C18.7 16.65 12 21 12 21z" />
@@ -155,7 +149,7 @@ export default function RecipeOutputPanel({ result, loading, isGuest }: RecipeOu
               </button>
             </div>
 
-            {!userId && (
+            {!isLoggedIn && !isGuest && (
               <p style={{ margin: "-10px 0 18px 0", fontSize: "0.82rem", color: "#6b7280" }}>
                 {isGuest ? "Guest favorites last for this session only." : "Sign in to sync favorites across devices, or continue as guest for a temporary list."}
               </p>

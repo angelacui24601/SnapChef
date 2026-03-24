@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/nextjs";
-import type { Dish } from "../../services/apiService";
+import type { Dish } from "../../lib/services/apiService";
 import {
   createFavoritePayloadFromDish,
   deleteFavorite,
@@ -10,12 +10,11 @@ import {
   fetchPreferences,
   saveFavorite,
   savePreferences as savePreferencesRequest,
-  syncClerkUser,
   type FavoriteRecipePayload,
   type FavoriteRecipeRecord,
   type UserPreferencesRecord,
-} from "../../services/backendApi";
-import { buildRecipeSourceKey } from "../../services/favorites";
+} from "../../lib/services/backendApi";
+import { buildRecipeSourceKey } from "../../lib/services/favorites";
 import AuthModal from "./AuthModal";
 import { PENDING_PREFS_KEY } from "../PreferencesModal";
 
@@ -35,12 +34,9 @@ interface SnapChefAuthContextValue {
   continueAsGuest: () => void;
   requireAuth: (action: () => void | Promise<void>) => void;
   clerkUser: ClerkUserSnapshot | null;
-  userId: string | null;
   favorites: FavoriteRecipeRecord[];
   preferences: UserPreferencesRecord | null;
-  isSyncingUser: boolean;
   isLoadingUserData: boolean;
-  syncError: string;
   saveUserPreferences: (preferences: UserPreferencesRecord) => Promise<void>;
   setGuestPreferences: (preferences: UserPreferencesRecord | null) => void;
   saveFavoriteRecipe: (recipe: FavoriteRecipePayload) => Promise<FavoriteRecipeRecord | null>;
@@ -55,12 +51,9 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   const { user } = useUser();
   const [isGuest, setIsGuest] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
-  const [userId, setUserId] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<FavoriteRecipeRecord[]>([]);
   const [preferences, setPreferences] = useState<UserPreferencesRecord | null>(null);
-  const [isSyncingUser, setIsSyncingUser] = useState(false);
   const [isLoadingUserData, setIsLoadingUserData] = useState(false);
-  const [syncError, setSyncError] = useState("");
 
   const isLoggedIn = Boolean(isSignedIn);
   const clerkUser = user
@@ -72,13 +65,13 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       }
     : null;
 
-  const hydrateUserData = async (nextUserId: string) => {
+  const hydrateUserData = async () => {
     setIsLoadingUserData(true);
 
     try {
       const [nextPreferences, nextFavorites] = await Promise.all([
-        fetchPreferences(nextUserId),
-        fetchFavorites(nextUserId),
+        fetchPreferences(),
+        fetchFavorites(),
       ]);
 
       setPreferences(nextPreferences);
@@ -96,68 +89,36 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   }, [isLoggedIn]);
 
   useEffect(() => {
-    if (!isLoaded) {
-      return;
-    }
+    if (!isLoaded) return;
 
     if (!isSignedIn || !user) {
-      setUserId(null);
       setFavorites([]);
       setPreferences(null);
-      setSyncError("");
-      setIsSyncingUser(false);
       setIsLoadingUserData(false);
-      return;
-    }
-
-    const email = user.primaryEmailAddress?.emailAddress;
-    if (!email) {
-      setSyncError("Your account is missing an email address, so SnapChef cannot sync your data yet.");
       return;
     }
 
     let cancelled = false;
 
-    const syncAndHydrate = async () => {
-      setIsSyncingUser(true);
-      setSyncError("");
+    const load = async () => {
+      await hydrateUserData();
 
-      try {
-        const syncedUser = await syncClerkUser(user.id, email);
-        if (cancelled) {
-          return;
-        }
-
-        setUserId(syncedUser.id);
-        await hydrateUserData(syncedUser.id);
-
-        // Apply preferences saved to sessionStorage before an OAuth redirect
-        if (!cancelled) {
-          const pendingJson = sessionStorage.getItem(PENDING_PREFS_KEY);
-          if (pendingJson) {
-            try {
-              sessionStorage.removeItem(PENDING_PREFS_KEY);
-              const pendingPrefs = JSON.parse(pendingJson) as UserPreferencesRecord;
-              const saved = await savePreferencesRequest(syncedUser.id, pendingPrefs);
-              if (!cancelled) setPreferences(saved);
-            } catch {
-              // non-critical — user can resave manually
-            }
+      if (!cancelled) {
+        const pendingJson = sessionStorage.getItem(PENDING_PREFS_KEY);
+        if (pendingJson) {
+          try {
+            sessionStorage.removeItem(PENDING_PREFS_KEY);
+            const pendingPrefs = JSON.parse(pendingJson) as UserPreferencesRecord;
+            const saved = await savePreferencesRequest(pendingPrefs);
+            if (!cancelled) setPreferences(saved);
+          } catch {
+            // non-critical
           }
-        }
-      } catch (error) {
-        if (!cancelled) {
-          console.error("Failed to sync Clerk user with PostgreSQL", error);
-          setSyncError(error instanceof Error ? error.message : "Failed to sync your account.");
-        }
-      } finally {
-        if (!cancelled) {
-          setIsSyncingUser(false);
         }
       }
     };
 
-    void syncAndHydrate();
+    void load();
 
     return () => {
       cancelled = true;
@@ -171,7 +132,6 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   const continueAsGuest = () => {
     setIsGuest(true);
     setShowAuthModal(false);
-    setSyncError("");
   };
 
   const requireAuth = (action: () => void | Promise<void>) => {
@@ -188,12 +148,12 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
   };
 
   const saveUserPreferences = async (nextPreferences: UserPreferencesRecord) => {
-    if (!isLoggedIn || isGuest || !userId) {
+    if (!isLoggedIn || isGuest) {
       setPreferences(nextPreferences);
       return;
     }
 
-    const savedPreferences = await savePreferencesRequest(userId, nextPreferences);
+    const savedPreferences = await savePreferencesRequest(nextPreferences);
     setPreferences(savedPreferences);
   };
 
@@ -204,7 +164,7 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       steps: recipe.steps,
     });
 
-    if (!isLoggedIn || isGuest || !userId) {
+    if (!isLoggedIn || isGuest) {
       const guestFavorite: FavoriteRecipeRecord = {
         id: recipe.recipeId ?? sourceKey,
         recipeId: recipe.recipeId ?? sourceKey,
@@ -221,18 +181,18 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
       return guestFavorite;
     }
 
-    const savedFavorite = await saveFavorite(userId, recipe);
+    const savedFavorite = await saveFavorite(recipe);
     setFavorites((current) => [savedFavorite, ...current.filter((entry) => entry.recipeId !== savedFavorite.recipeId)]);
     return savedFavorite;
   };
 
   const removeFavoriteRecipe = async (recipeId: string) => {
-    if (!isLoggedIn || isGuest || !userId) {
+    if (!isLoggedIn || isGuest) {
       setFavorites((current) => current.filter((entry) => entry.recipeId !== recipeId));
       return;
     }
 
-    await deleteFavorite(userId, recipeId);
+    await deleteFavorite(recipeId);
     setFavorites((current) => current.filter((entry) => entry.recipeId !== recipeId));
   };
 
@@ -260,12 +220,9 @@ export function SnapChefAuthProvider({ children }: { children: React.ReactNode }
         continueAsGuest,
         requireAuth,
         clerkUser,
-        userId,
         favorites,
         preferences,
-        isSyncingUser,
         isLoadingUserData,
-        syncError,
         saveUserPreferences,
         setGuestPreferences,
         saveFavoriteRecipe,

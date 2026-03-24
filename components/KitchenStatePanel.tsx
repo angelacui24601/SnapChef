@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef, useState } from "react";
-import { detectIngredients, getErrorMessage, type MealPlanInput, type MealType } from "../services/apiService";
+import { detectIngredients, getErrorMessage, type MealPlanInput, type MealType } from "../lib/services/apiService";
 
 interface Ingredient {
   name: string;

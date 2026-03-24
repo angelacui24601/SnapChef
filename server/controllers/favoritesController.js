@@ -11,10 +11,12 @@ function normalizeTextArray(value) {
 }
 
 async function addFavorite(req, res) {
-  const { userId, recipeId = null, recipe } = req.body;
+  // userId is injected by requireSession middleware from the signed cookie
+  const userId = req.userId;
+  const { recipeId = null, recipe } = req.body;
 
   if (!userId) {
-    return res.status(400).json({ error: "userId is required" });
+    return res.status(401).json({ error: "Not authenticated" });
   }
 
   if (!recipeId && !recipe) {
@@ -97,10 +99,12 @@ async function addFavorite(req, res) {
 }
 
 async function removeFavorite(req, res) {
-  const { userId, recipeId } = req.body;
+  // userId is injected by requireSession middleware from the signed cookie
+  const userId = req.userId;
+  const { recipeId } = req.body;
 
   if (!userId || !recipeId) {
-    return res.status(400).json({ error: "userId and recipeId are required" });
+    return res.status(400).json({ error: "recipeId is required" });
   }
 
   try {
@@ -128,7 +132,8 @@ async function removeFavorite(req, res) {
 }
 
 async function getFavorites(req, res) {
-  const { userId } = req.params;
+  // userId is injected by requireSession middleware from the signed cookie
+  const userId = req.userId;
 
   try {
     const result = await pool.query(

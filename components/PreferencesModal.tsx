@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect } from "react";
 import { useSignIn, useClerk } from "@clerk/nextjs";
 import { useSnapChefAuth } from "./auth/AuthProvider";
 import type { OnboardingProfile } from "../app/onboarding/page";
-import type { UserPreferencesRecord } from "../services/backendApi";
+import type { UserPreferencesRecord } from "../lib/services/backendApi";
 import StepBasicInfo from "./onboarding/StepBasicInfo";
 import StepDietaryNeeds from "./onboarding/StepDietaryNeeds";
 import StepKitchenSetup from "./onboarding/StepKitchenSetup";

@@ -13,7 +13,7 @@ import {
   getErrorMessage,
   type GenerateRecipeResponse,
   type MealPlanInput,
-} from "../services/apiService";
+} from "../lib/services/apiService";
 
 interface Ingredient {
   name: string;
@@ -27,10 +27,8 @@ export default function HomePage() {
     isGuest,
     isLoadingUserData,
     isLoggedIn,
-    isSyncingUser,
     openAuthModal,
     preferences,
-    syncError,
   } = useSnapChefAuth();
   const [ingredients, setIngredients] = useState<Ingredient[]>([]);
   const [meals, setMeals] = useState<MealPlanInput[]>([{ type: "lunch", people: 1 }]);
@@ -216,7 +214,7 @@ export default function HomePage() {
                   </div>
                   <div style={{ fontSize: "0.72rem", color: "#6b7280", maxWidth: "140px", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                     {isLoggedIn
-                      ? (clerkUser?.fullName ?? clerkUser?.email ?? (isSyncingUser ? "Syncing account..." : "Signed in"))
+                      ? (clerkUser?.fullName ?? clerkUser?.email ?? "Signed in")
                       : isGuest
                         ? "Browsing without saving"
                         : "Sign in to save"}
@@ -229,12 +227,6 @@ export default function HomePage() {
 
       {/* Page content */}
       <div style={{ maxWidth: "1400px", margin: "0 auto", padding: "28px 24px" }}>
-        {syncError && (
-          <div className="mb-5 rounded-[20px] border border-amber-200 bg-amber-50 px-5 py-4 text-sm text-amber-800">
-            {syncError}
-          </div>
-        )}
-
         {error && (
           <div
             style={{

@@ -1,5 +1,24 @@
 const pool = require("../db/pool");
 
+/** Cookie options — shared by set and clear. */
+const SESSION_COOKIE_NAME = "sc_session";
+const cookieOptions = {
+  httpOnly: true,   // JS cannot read it
+  signed: true,     // HMAC-signed with COOKIE_SECRET
+  sameSite: "lax",  // safe for same-site + proxied requests
+  secure: process.env.NODE_ENV === "production", // HTTPS only in prod
+  path: "/",
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+};
+
+function setSessionCookie(res, postgresUserId) {
+  res.cookie(SESSION_COOKIE_NAME, postgresUserId, cookieOptions);
+}
+
+function clearSessionCookie(res) {
+  res.clearCookie(SESSION_COOKIE_NAME, { path: "/" });
+}
+
 async function syncUser(req, res) {
   const { clerkUserId, email } = req.body;
 
@@ -39,6 +58,7 @@ async function syncUser(req, res) {
       );
 
       await client.query("COMMIT");
+      setSessionCookie(res, updated.rows[0].id);
       return res.status(200).json({ user: updated.rows[0] });
     }
 
@@ -63,6 +83,7 @@ async function syncUser(req, res) {
       );
 
       await client.query("COMMIT");
+      setSessionCookie(res, updated.rows[0].id);
       return res.status(200).json({ user: updated.rows[0] });
     }
 
@@ -76,6 +97,7 @@ async function syncUser(req, res) {
     );
 
     await client.query("COMMIT");
+    setSessionCookie(res, created.rows[0].id);
     return res.status(200).json({ user: created.rows[0] });
   } catch (error) {
     await client.query("ROLLBACK");
@@ -86,6 +108,12 @@ async function syncUser(req, res) {
   }
 }
 
+function logoutUser(req, res) {
+  clearSessionCookie(res);
+  return res.status(200).json({ ok: true });
+}
+
 module.exports = {
   syncUser,
+  logoutUser,
 };

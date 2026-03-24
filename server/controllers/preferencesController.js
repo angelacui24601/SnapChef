@@ -11,8 +11,9 @@ function normalizeTextArray(value) {
 }
 
 async function savePreferences(req, res) {
+  // userId is injected by requireSession middleware from the signed cookie
+  const userId = req.userId;
   const {
-    userId,
     age = null,
     sex = null,
     goal = null,
@@ -23,10 +24,6 @@ async function savePreferences(req, res) {
     kitchenTools = [],
     kitchenImage = null,
   } = req.body;
-
-  if (!userId || typeof userId !== "string") {
-    return res.status(400).json({ error: "userId is required" });
-  }
 
   try {
     const preferenceResult = await pool.query(
@@ -84,7 +81,8 @@ async function savePreferences(req, res) {
 }
 
 async function getPreferences(req, res) {
-  const { userId } = req.params;
+  // userId is injected by requireSession middleware from the signed cookie
+  const userId = req.userId;
 
   try {
     const result = await pool.query(

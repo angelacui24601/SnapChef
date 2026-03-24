@@ -1,18 +1,13 @@
 import type { Dish } from "./apiService";
 import { buildRecipeSourceKey } from "./favorites";
 
-const BACKEND_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "http://localhost:4000/api";
+// Requests go directly to Next.js API routes (/api/*).
+// Same-origin means the browser automatically sends the sc_session cookie.
+const BACKEND_API_BASE_URL = process.env.NEXT_PUBLIC_BACKEND_API_URL ?? "/api";
 
 interface BackendApiError {
   error?: string;
   message?: string;
-}
-
-export interface SyncedUser {
-  id: string;
-  clerk_id: string | null;
-  email: string;
-  created_at: string;
 }
 
 export interface UserPreferencesRecord {
@@ -138,6 +133,7 @@ function mapFavoriteResponse(raw: RawFavoriteResponse): FavoriteRecipeRecord {
 
 async function backendRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
   const response = await fetch(`${BACKEND_API_BASE_URL}${endpoint}`, {
+    credentials: "include",
     headers: {
       Accept: "application/json",
       ...options.headers,
@@ -160,21 +156,9 @@ async function backendRequest<T>(endpoint: string, options: RequestInit = {}): P
   return response.json() as Promise<T>;
 }
 
-export async function syncClerkUser(clerkUserId: string, email: string) {
-  const response = await backendRequest<{ user: SyncedUser }>("/users/sync", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ clerkUserId, email }),
-  });
-
-  return response.user;
-}
-
-export async function fetchPreferences(userId: string) {
+export async function fetchPreferences() {
   try {
-    const response = await backendRequest<RawPreferenceResponse>(`/preferences/${userId}`);
+    const response = await backendRequest<RawPreferenceResponse>(`/preferences`);
     return mapPreferenceResponse(response);
   } catch (error) {
     if (error instanceof Error && /404/.test(error.message)) {
@@ -185,14 +169,13 @@ export async function fetchPreferences(userId: string) {
   }
 }
 
-export async function savePreferences(userId: string, preferences: UserPreferencesRecord) {
+export async function savePreferences(preferences: UserPreferencesRecord) {
   const response = await backendRequest<{ preferences: RawPreferenceResponse }>("/preferences", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      userId,
       age: preferences.age || null,
       sex: preferences.sex || null,
       goal: preferences.goal || null,
@@ -208,19 +191,18 @@ export async function savePreferences(userId: string, preferences: UserPreferenc
   return mapPreferenceResponse(response.preferences);
 }
 
-export async function fetchFavorites(userId: string) {
-  const response = await backendRequest<{ favorites: RawFavoriteResponse[] }>(`/favorites/${userId}`);
+export async function fetchFavorites() {
+  const response = await backendRequest<{ favorites: RawFavoriteResponse[] }>(`/favorites`);
   return response.favorites.map(mapFavoriteResponse);
 }
 
-export async function saveFavorite(userId: string, recipe: FavoriteRecipePayload) {
+export async function saveFavorite(recipe: FavoriteRecipePayload) {
   const response = await backendRequest<{ recipe: RawFavoriteResponse }>("/favorite", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      userId,
       recipeId: recipe.recipeId,
       recipe: {
         id: recipe.recipeId,
@@ -235,13 +217,13 @@ export async function saveFavorite(userId: string, recipe: FavoriteRecipePayload
   return mapFavoriteResponse(response.recipe);
 }
 
-export async function deleteFavorite(userId: string, recipeId: string) {
+export async function deleteFavorite(recipeId: string) {
   await backendRequest("/favorite", {
     method: "DELETE",
     headers: {
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ userId, recipeId }),
+    body: JSON.stringify({ recipeId }),
   });
 }
 
